@@ -1,0 +1,53 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+
+require 'basic_configuration'
+require 'aws_context'
+
+require 'pp'
+
+max_count = 10000      # up to 3 seconds
+n = 1
+args = ARGV
+while args.size > 0
+  a = args.shift
+  case
+  when a == '-?': 
+    puts "usage: feed-primes-queue [-m max-cont] [n]"
+    exit 1
+  when a == '-m'
+    max_count = args.shift.to_i
+  when a =~ /[0-9]+/
+    n = a.to_i
+  end
+end
+
+AwsContext.setup(:retry)
+
+class FeedPrimesQueue
+  attr_reader :url
+
+  def initialize
+    config = BasicConfiguration.new
+    @sqs = AwsContext.instance.sqs(*config.keys)
+    queue = "primes-work"
+    @url = @sqs.list_queues(queue).first
+    if @url.nil? 
+      puts "queue not found: #{queue}"
+    end
+    @work_id = 0
+  end
+
+  def process_work(n)
+    @work_id += 1
+    body = "#{@work_id}|#{n}"
+    res = @sqs.send_message(@url, body)
+    puts "sent #{body}"
+  end
+end
+
+f = FeedPrimesQueue.new
+exit 1 if f.url.nil?
+
+n.times { f.process_work(rand(max_count))}
+

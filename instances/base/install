@@ -1,0 +1,40 @@
+#!/bin/bash
+
+. /mnt/keys/credentials
+USER=aws
+IMAGE=$AWS_USER-ami-base.img
+MANIFEST=$IMAGE.manifest.xml
+
+if grep -q "^$USER:" /etc/passwd 2> /dev/null
+then
+    echo "found user $USER - skipping"
+else
+    echo "Adding user $USER"
+    useradd $USER
+    touch /home/$USER/.bashrc
+    touch /home/$USER/.bash_profile
+    echo "Setting password for $USER"
+    echo "0bscure-PWD" |passwd --stdin $USER 
+fi
+
+echo "Welcome to $AWS_USER EC2 Base Image" >/etc/motd
+
+echo "installing emacs"
+yum -y install emacs
+
+cd /mnt
+
+echo "bundling"
+rm -f $IMAGE
+ec2-bundle-vol --fstab /etc/fstab --volume / --prefix $IMAGE --destination /mnt --arch i386 --size 10240 --cert /mnt/keys/$AWS_CERT --privatekey /mnt/keys/$AWS_PRIVATE_KEY --user $AWS_USER_ID
+
+echo "uploading"
+ec2-upload-bundle --manifest /mnt/$MANIFEST --bucket $AWS_BUCKET --access-key $AWS_ACCESS_KEY --secret-key $AWS_SECRET_KEY
+
+echo "registering image"
+cd /mnt/tools
+export RUBYLIB=/mnt/lib
+./deregister-image $AWS_BUCKET/$MANIFEST
+./register-image $AWS_BUCKET/$MANIFEST
+./make-image-public $AWS_BUCKET/$MANIFEST
+

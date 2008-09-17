@@ -1,0 +1,2 @@
+Make sure you run "setup" in $AWS_HOME/examples before you build
+instances.  This sets up the credentials you will need to create instances.

@@ -1,0 +1,84 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/EC2'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Log in to an instance.
+# An ami-name can be supplied.
+# If there is only, use it.
+# Otherwise, list the instances and let the user choose.
+
+def login_instance(keyfile, instance)
+  dns = instance[:instances][0][:public_dns]
+#  puts dns
+  if ! dns.nil? 
+    opt = "StrictHostKeyChecking=no"
+    cmd = "ssh -i #{keyfile} -o #{opt} root@#{dns}"
+#   puts cmd
+    system(cmd)
+  else
+    puts "no dns"
+    exit 1
+  end
+end
+
+if ARGV[0] == '-?'
+  puts "usage: login-instance [ami-name]"
+  exit 1
+end
+
+if ARGV.size >= 1 then
+  name = ARGV[0]
+else
+  name = nil
+end
+
+config = BasicConfiguration.new
+keyfile = config.aws[:aws_key]
+if keyfile.nil? 
+  puts "Keyfile must be specified in AWS_KEY environment variabe or in config.ini."
+  exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+  if name.nil?
+    instances = ec2.describe_instances
+  else
+    instances = ec2.describe_instances([name])
+  end
+  #pp instances
+rescue
+  puts "cannot list instances #{$!}"
+  exit 1
+end
+
+if instances.nil? || instances.size == 0
+  puts "no instances running"
+  exit 1
+end
+instances.delete_if { |instance| instance[:instances][0][:state] != 'running'}
+
+#pp instances
+if instances.size == 1
+  login_instance(keyfile, instances[0])
+else
+  n = 0
+  instances.each do |instance|
+    n += 1
+    puts "#{n}) #{instance[:instances][0][:id]} #{instance[:instances][0][:state]}"
+  end
+  line = STDIN.gets
+  idx = line.to_i - 1
+  if idx >= 0 && idx < instances.size
+    login_instance(keyfile, instances[idx])    
+  end
+end
+
+

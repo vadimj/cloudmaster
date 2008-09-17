@@ -1,0 +1,31 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+
+require 'fib-client'
+
+# usage: test-client [host [port]]
+#
+# connects to fib client on host:port and gets a new
+#  value once a second
+#
+# Used to test generate-fib running locally.
+# 1) in one window: ruby generate-fig.rb
+# 2) in another: test-client
+case ARGV.size
+when 0
+  host = "localhost"
+  port = 20808
+when 1
+  host = ARGV[0]
+  port = 20808
+when 2
+  host = ARGV[0]
+  port = ARGV[1]
+end
+
+f = FibClient.new(host, port)
+Signal.trap("INT") do
+  f.shutdown
+end
+
+f.run

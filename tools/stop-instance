@@ -1,0 +1,29 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/EC2'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Stop the given instance.
+
+if ARGV[0] == '-?' || ARGV.size != 1 then
+  puts "usage: stop-instance instance-name"
+  exit 1
+end
+name=ARGV[0]
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+  instances = ec2.terminate_instances([name])
+  instances.each {|i| puts "stopped #{i[:id]}\t#{i[:state]}"}
+rescue
+  puts "not stopped #{name}"
+  exit 1
+end
+

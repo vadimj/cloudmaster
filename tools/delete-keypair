@@ -1,0 +1,30 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/EC2'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Delete a keypair.
+# This deletes it from EC2.  You should also remember to get rid of the
+#    file because now it is useless.
+
+if ARGV[0] == '-?' || ARGV.size != 1 then
+   puts "usage: delete-keypair name"
+   exit 1
+end
+name=ARGV[0]
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+  ec2.delete_keypair(name)
+  puts "deleted keypair #{name}"
+rescue
+  puts "error #{$!} #{name}"
+  exit 1
+end

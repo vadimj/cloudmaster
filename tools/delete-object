@@ -1,0 +1,38 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/S3'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Deletes an S3 object (key-value pair).
+# The bucket may be supplied on the command line or in the environment.
+
+if ARGV[0] == '-?' || ARGV.size < 1
+  puts "usage: delete-object key [bucket]"
+  exit 1
+end
+name=ARGV[0]
+if ARGV.size >= 2
+  bucket = ARGV[1]
+end
+
+config = BasicConfiguration.new
+if config.aws[:aws_bucket].nil?
+  puts "AWS_BUCKET environment variable must be set or defined in config file"
+  exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+s3 = AwsContext.instance.s3(*config.keys)
+begin
+  obj = s3.delete_object(bucket, name)
+  puts "deleted"
+rescue
+  puts "not deleted"
+  exit 1
+end
+

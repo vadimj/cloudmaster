@@ -1,0 +1,81 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/EC2'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+#  Copies fles from a given instance to a local file.
+
+def copy_from_instance(keyfile, remote, local, instances, i)
+  if i < 0 || (i+1) > instances.size
+    puts "unknown instance #{i}"
+    exit 1
+  end
+  dns = instances[i][:instances][0][:public_dns]
+#  puts dns
+  if ! dns.nil? 
+    cmd = "scp -r -i #{keyfile} root@#{dns}:#{remote} #{local}"
+#   puts cmd
+    system(cmd)
+  else
+    puts "no dns"
+    exit 1
+  end
+end
+
+if ARGV[0] == '-?' || ARGV.size < 2 then
+  puts "usage: copy-from-instance remote local [instance]"
+  exit 1
+end
+remote=ARGV[0]
+local=ARGV[1]
+if ARGV.size >= 2 then
+  name = ARGV[2]
+else
+  name = nil
+end
+
+
+config = BasicConfiguration.new
+if config.aws[:aws_key].nil? 
+  puts "Keyfile must be specified in AWS_KEY environment variabe or in confg file."
+  exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+  if name.nil?
+    instances = ec2.describe_instances
+  else
+    instances = ec2.describe_instances([name])
+  end
+  #pp instances
+rescue
+  puts "cannot list instances #{$!}"
+  exit 1
+end
+
+if instances.nil? || instances.size == 0
+  puts "no instances running"
+  exit 1
+end
+#pp instances
+if instances.size == 1
+  copy_from_instance(keyfile, remote, local, instances, 0)
+else
+  n = 0
+  instances.each do |instance|
+    n += 1
+    puts "#{n}) #{instance[:instances][0][:id]} #{instance[:instances][0][:state]}"
+  end
+  line = STDIN.gets
+  idx = line.to_i - 1
+  if idx >= 0 && idx < instances.size
+    copy_from_instance(keyfile, remote, local, instances, idx)    
+  end
+end

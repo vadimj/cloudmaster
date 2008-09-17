@@ -1,0 +1,36 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/SQS'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Sends a message to the given queue.
+# The contents of the message are given as "body"
+
+if ARGV[0] == '-?' || ARGV.size != 2 then
+  puts "usage: send-queue name message"
+  exit 1
+end
+name = ARGV[0]
+body = ARGV[1]
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+sqs = AwsContext.instance.sqs(*config.keys)
+begin
+  url = sqs.list_queues(name).first
+  if url.nil? 
+    puts "queue not found: #{name}"
+  else  
+    res = sqs.send_message(url, body)
+    puts "sent #{name} #{body}"
+  end
+rescue
+  puts "error #{$!} #{name}"
+  exit 1
+end
+

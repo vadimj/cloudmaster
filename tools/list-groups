@@ -1,0 +1,43 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/EC2'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Display each security group.
+# If an option pattern is supplied, it will be used to filter the groups.
+
+if ARGV[0] == '-?'
+  puts "usage: list-groups [pattern]"
+  exit 1
+end
+
+if ARGV.size > 0 then
+  filter=Regexp.new(ARGV[0])
+else
+  filter=Regexp.new('.*')
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+  groups = ec2.describe_security_groups
+  #pp groups
+  groups.each do |group|
+    if group[:name] =~ filter
+      puts "#{group[:name]} -- #{group[:description]}"
+      grants = group[:grants]
+      grants.each do |grant|
+        puts "  #{grant[:protocol]} #{grant[:from_port]}-#{grant[:to_port]} #{grant[:to_ort]} #{grant[:ip_range]}"
+      end
+    end
+  end
+rescue
+  puts "error #{$!} #{group}"
+  exit 1
+end

@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# To be run on the instance to install the primes server.
+. /mnt/keys/credentials
+AWS_ENV=$1
+if [ X$AWS_ENV = X ]; then ENV=""; else ENV="-$AWS_ENV"; fi
+USER=aws
+BIN=/home/$USER/primes
+LOG=/var/log/primes.log
+IMAGE=$AWS_USER-ami-primes$ENV.img
+MANIFEST=$IMAGE.manifest.xml
+export RUBYLIB=/mnt/lib
+
+echo "installing primes"
+if `[ ! -d $BIN ]`
+then mkdir $BIN
+fi
+
+echo "Welcome to $AWS_USER EC2 Primes Image $AWS_ENV" >/etc/motd
+
+echo "export RUBYLIB=/home/$USER/lib" >>/home/$USER/.bash_profile
+echo "export AWS_HOME=/home/$USER" >>/home/$USER/.bash_profile
+
+echo "creating log file"
+touch $LOG
+chown $USER $LOG
+chmod ugo+w $LOG
+
+echo "creating control and init scripts"
+cp -r /mnt/primes/* $BIN
+cp -r /mnt/lib /home/$USER
+cp -r /mnt/tools /home/$USER
+cp /mnt/primes/primes /etc/init.d
+/sbin/chkconfig --add primes
+
+cd /mnt
+
+echo "bundling"
+rm -f $IMAGE
+ec2-bundle-vol --volume / --prefix $IMAGE --destination /mnt --arch i386 --size 10240 --cert /mnt/keys/$AWS_CERT --privatekey /mnt/keys/$AWS_PRIVATE_KEY --user $AWS_USER_ID
+
+echo "uploading"
+ec2-upload-bundle --manifest /mnt/$MANIFEST --bucket $AWS_BUCKET --access-key $AWS_ACCESS_KEY --secret-key $AWS_SECRET_KEY
+
+
+echo "registering image"
+cd /mnt/tools
+./deregister-image $AWS_BUCKET/$MANIFEST
+./register-image $AWS_BUCKET/$MANIFEST
+./make-image-public $AWS_BUCKET/$MANIFEST
+

@@ -1,0 +1,42 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/SimpleDB'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Get a SimpleDB item's attributes
+
+if ARGV[0] == '-?' || ARGV.size < 2 then
+  puts "usage: get-attributes domain-name item-name [attribute-name]"
+  exit 1
+end
+domain_name = ARGV[0]
+item_name = ARGV[1]
+if ARGV.size > 1
+  attribute_name = ARGV[2]
+else
+  attribute_name = nil
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+sdb = AwsContext.instance.sdb(*config.keys)
+begin
+  res = sdb.get_attributes(domain_name, item_name, attribute_name)
+  if res.length > 0 && attribute_name
+    puts "#{attribute_name}: [#{res.join(' ')}]"
+  else
+    res.each do |a, va|
+      puts "#{a}: [#{va.join(' ')}]"
+    end
+  end
+  
+rescue
+  puts "error #{$!} #{domain_name} #{item_name} #{attribute_name}"
+  exit 1
+end
+

@@ -1,0 +1,56 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/S3'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Deletes all S3 objects (key-value pairs) matching a given prefix.
+# The bucket may be supplied on the command line or in the environment.
+
+if ARGV[0] == '-?' ||ARGV.size < 1
+  puts "usage: delete-objects prefix [bucket]"
+  exit 1
+end
+prefix=ARGV[0]
+if ARGV.size >= 2
+  bucket = ARGV[1]
+end
+
+config = BasicConfiguration.new
+if config.aws[:aws_bucket].nil?
+  puts "AWS_BUCKET environment variable must be set or defined in config file"
+  exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+s3 = AwsContext.instance.s3(*config.keys)
+begin
+  objs = s3.list_objects(bucket, :prefix => prefix)
+
+  to_delete = objs[:objects].collect {|o| o[:key]}
+  if to_delete.empty?
+    puts "nothing matches"
+    exit 
+  end
+  to_delete.each {|k| puts k}
+  print "delete? [yN] "
+  line = STDIN.gets.chomp
+  if line == 'y'
+    to_delete.each do |k| 
+      begin
+        s3.delete_object(bucket, k)
+        puts "deleted #{k}"
+      rescue
+        puts "not deleted #{k}"
+      end
+    end
+  end
+rescue
+  puts "not deleted"
+  exit 1
+end
+

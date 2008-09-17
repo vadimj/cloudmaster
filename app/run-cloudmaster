@@ -1,0 +1,45 @@
+#!/usr/bin/ruby
+$:.unshift File.join(ENV['AWS_HOME'], "app")
+
+require 'configuration'
+require 'aws_context'
+require 'configuration'
+require 'pool_runner'
+require 'pp'
+
+# Get optional args specifying what server to manage.
+verbose = false
+config_files = []
+opts = []
+args = ARGV
+while args.size > 0
+  a = args.shift
+  case a
+  when "-?": puts "usage: run-cloudmaster [-v] [-l logfile] [-c configfile] [-p pool]"
+             exit 1
+  when "-v": verbose = true
+  when "-l": logfile = args.shift
+  when "-c": config_files << args.shift
+  when "-p": opts << args.shift.to_sym
+  end
+end
+opts.uniq!
+
+LoggerFactory.setup(logfile, 'cloudmaster')
+AwsContext.setup(:retry)
+
+config = Cloudmaster::Configuration.new(config_files, opts)
+
+if verbose
+  puts "Environment: #{config.aws[:aws_env]}" if config.aws[:aws_env]
+  puts "Log file: #{logfile}" if logfile
+  puts "Config file: #{config_files.join(' ')}" if config_files.size > 0
+end
+
+Signal.trap("TERM") do
+  # re-read the config file on SIGTERM -- into existing config object
+  config.refresh
+end
+
+# Run a pool supervisor
+Cloudmaster::PoolRunner.new(config).run

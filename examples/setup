@@ -1,0 +1,72 @@
+#!/bin/bash
+
+#  Set up the queues, security groups, and keypair
+#    to run the test instances.
+
+#  Set up the queues, security groups, and keypair
+#    to run the test instances.
+
+function f-setup-environment {
+  if [ X$AWS_USER == X ]
+  then
+    export AWS_USER=cloudmaster
+    echo "Defaulting AWS_USER to $AWS_USER"
+  fi
+  if [ X$AWS_KEY == X ]
+  then
+    echo "Defaulting AWS_KEY to $HOME/keys/${AWS_USER}-kp.pem"
+    export AWS_KEY=$HOME/keys/${AWS_USER}-kp.pem
+  fi
+}
+
+function f-create-keypair {
+  # Create keypair
+  echo "create keypair"
+  local keyfile=$1
+  key=`basename $keyfile`
+  keydir=`dirname $keyfile`
+  create-keypair $key
+  chmod 600 $key
+  mv $key $keydir
+}
+
+function f-create-queues {
+  # Create queues
+  echo "create queues"
+  local env=$1
+  create-queue primes-work$env
+  create-queue primes-status$env
+  create-queue fib-work$env
+  create-queue fib-status$env
+}
+
+function f-create-groups {
+  # Create groups
+  echo "create groups"
+  create-group primes "prime server"
+  add-ip-rule primes tcp 22 22 0.0.0.0/0
+  create-group fib "fib server"
+  add-ip-rule fib tcp 22 22 0.0.0.0/0
+  add-ip-rule fib tcp 20808 20808 0.0.0.0/0
+}
+
+# Create credentials file
+# These credentials are built so they can be uploaded to an instance
+#  and used by its build script.
+# They are not stored on the instance after it is built.
+# Credentials ordinarily come down in user data.
+
+function f-build-credentials {
+  echo "build credentials"
+  local keyfile=$1
+  keydir=`dirname $keyfile`
+  show-config >$keydir/credentials
+}
+
+# Also need pk*.pem and cert-*.pem in $keydir
+
+f-setup-environment
+f-build-credentials $AWS_KEY
+f-create-keypair $AWS_KEY
+f-create-queues $AWS_ENV
+f-create-groups $AWS_KEY

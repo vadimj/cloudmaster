@@ -1,0 +1,30 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/EC2'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Display the names of all the keypairs.
+
+if ARGV[0] == '-?'
+  puts "usage: list-keypairs"
+  exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+  keypairs = ec2.describe_keypairs
+  #pp keypairs
+  keypairs.each do |keypair|
+     puts "#{keypair[:name]} #{keypair[:fingerprint]}"
+  end
+rescue
+  puts "error #{$!}"
+  exit 1
+end

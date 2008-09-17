@@ -1,0 +1,31 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/EC2'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+#  Get the console output from a running instance.
+#  This information is stored by amazon, for retrieval if needed.
+
+if ARGV[0] == '-?' || ARGV.size != 1 then
+  puts "usage: get-console-instance instance-name"
+  exit 1
+end
+name=ARGV[0]
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+  out = ec2.get_console_output(name)
+  #pp out
+  puts out[:output]
+rescue
+  puts "error #{$!} #{name}"
+  exit 1
+end
+

@@ -1,0 +1,76 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/EC2'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Start an instance.
+# An instance id (ami-number) or instance name is required.
+# Optionally, a security group may be given.
+# If no group is given, it uses to one given in the environment, 
+#  or "default".
+
+config = BasicConfiguration.new
+keyfile = config.aws[:aws_key]
+if keyfile.nil? 
+  puts "Keyfile must be specified in AWS_KEY environment variabe or in config.ini."
+  exit 1
+end
+group = config.aws[:aws_group]
+group = 'default' if group.nil? 
+
+if ARGV[0] == '-?' || ARGV.size < 1
+  puts "usage: start-instance image-id|image-name [security-group]"
+  exit 1
+end
+name=ARGV[0]
+group = ARGV[1] if ARGV.size > 1
+
+opts = {:key_name => File.basename(keyfile, ".*"), :security_groups => [ group ]}
+
+
+Signal.trap("INT") do
+  exit 2
+end
+
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+  if name =~ /^ami-/
+    instances = ec2.run_instances(name, 1, 1, opts)
+  else
+    images = ec2.describe_images
+    #pp images
+    image_ids = [];
+    n = 0;
+    filter=Regexp.new(name)
+    im = []
+    images.each do |i|
+      if i[:location] =~ filter
+        im << i
+      end
+    end
+    if im.size == 1
+      instances = ec2.run_instances(im[0][:id], 1, 1, opts)
+    elsif im.size > 1
+      im.each do |i|
+        n += 1
+        puts "#{n}) #{i[:id]} #{i[:location]}"
+        image_ids << i[:id]
+      end
+      line = STDIN.gets
+      idx = line.to_i - 1
+      if idx >= 0 && idx < image_ids.size
+        instances = ec2.run_instances(image_ids[idx], 1, 1, opts)
+      end
+    end
+  end
+  #pp instances
+  unless instances.nil? 
+    instances[:instances].each {|o| puts "#{o[:id]}"}
+  end
+rescue
+  puts "not started #{name} #{$!}"
+  exit 1
+end
+

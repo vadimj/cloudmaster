@@ -1,0 +1,48 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/S3'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Display all keys in the S3 bucket.
+# The display can optionally be limited to a given prefix.
+
+if ARGV[0] == '-?' 
+  puts "usage: list-objects [prefix [bucket]]"
+  exit 1
+end
+
+if ARGV.size >= 1
+  prefix = ARGV[0]
+else
+  prefix = nil
+end
+if ARGV.size >= 2
+  bucket = ARGV[1]
+end
+
+config = BasicConfiguration.new
+if config.aws[:aws_bucket].nil?
+  puts "AWS_BUCKET environment variable must be set or defined in config file."
+  exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+s3 = AwsContext.instance.s3(*config.keys)
+begin
+  if prefix 
+    opts = { :prefix => prefix}
+    objs = s3.list_objects(aws_bucket, opts)
+  else
+    objs = s3.list_objects(aws_bucket)
+  end
+  objs[:objects].each {|o| puts "#{o[:key]}"}
+rescue
+  puts "error: #{$!} #{prefix} #{bucket}"
+  exit 1
+end
+

@@ -1,0 +1,33 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/SimpleDB'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# List SimpleDB domains.
+
+if ARGV[0] == '-?' then
+  puts "usage: list-domains [max-domains]"
+  exit 1
+end
+if ARGV.size > 0 
+  max_domains = ARGV[0]
+else
+  max_domains = 100
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+sdb = AwsContext.instance.sdb(*config.keys)
+begin
+  res = sdb.list_domains(max_domains)
+  res.each { |d|  puts d }
+rescue
+  puts "error #{$!} #{max_domains}"
+  exit 1
+end
+

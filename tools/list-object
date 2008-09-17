@@ -1,0 +1,40 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/S3'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+#  Retrieves the value of an S3 object (key/value pair).
+# The bucket may be supplied on the command line or in the environment.
+
+if ARGV[0] == '-?' || ARGV.size < 1 then
+  puts "usage: list-object key [bucket]"
+  exit 1
+end
+key=ARGV[0]
+if ARGV.size >= 2
+  bucket = ARGV[1]
+end
+
+config = BasicConfiguration.new
+if config.aws[:aws_bucket].nil?
+  puts "AWS_BUCKET environment variable must be set or defined in config file."
+  exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+s3 = AwsContext.instance.s3(*config.keys)
+begin
+  obj = s3.get_object(bucket, key) do |data|
+    STDOUT.write(data)
+  end
+  #pp obj
+rescue
+  puts "error: #{$!} -- not listed"
+  exit 1
+end
+

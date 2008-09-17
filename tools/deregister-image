@@ -1,0 +1,48 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/EC2'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Deregister the given image.
+# You can give an image id (ami-number) or an image manifest name.
+
+if ARGV[0] == '-?' || ARGV.size != 1 then
+  puts "usage: deregister-image image-id|image-name"
+  exit 1
+end
+name = ARGV[0]
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+  if name =~ /^ami-/
+    image_id = name
+  else
+    images = ec2.describe_images
+    #pp images
+    filter=Regexp.new(ARGV[0])
+    images = images.find_all {|i| i[:location] =~ filter }
+    #pp images
+    if images.size == 1
+      #puts "deregistering #{images.first[:id]}"
+      image_id = images.first[:id]
+    elsif images.size > 1
+      puts "NOT deregisterd -- select one of the ids:"
+      images.each {|i| puts "#{i[:id]} #{i[:location]}"}
+      exit 1
+    else
+      exit 0
+    end
+    ec2.deregister_image(image_id)
+  end
+rescue
+  puts "error #{$!} #{name}"
+  exit 1
+end
+

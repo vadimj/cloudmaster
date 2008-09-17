@@ -1,0 +1,29 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/S3'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Delete a bucket.
+
+if ARGV[0] == '-?' || ARGV.size != 1 then
+  puts "usage: delete-bucket name"
+  exit 1
+end
+name=ARGV[0]
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+s3 = AwsContext.instance.s3(*config.keys)
+begin
+  obj = s3.delete_bucket(name)
+  puts "deleted"
+rescue
+  puts "not deleted"
+  exit 1
+end
+

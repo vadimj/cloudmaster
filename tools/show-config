@@ -1,0 +1,26 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Show the config aws environment as statements suitable for
+# use with bash.
+if ARGV[0] == '-?'
+  puts "usage: show-config [config-file]"
+  exit 1
+end
+if ARGV.size >= 1
+  config_files = [ARGV[0]]
+else
+  config_files = []
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new(config_files)
+config.aws.each do |k, v|
+  puts "export #{k.to_s.upcase}=#{v}" unless v.nil?
+end

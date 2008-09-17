@@ -1,0 +1,45 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/EC2'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Display information about all our instances.
+# the optional argument -f gives the image manifest name instead of the
+#  ami-name.
+
+if ARGV[0] == '-?' 
+  puts "usage: list-instances [-f]"
+  exit 1
+end
+
+full = ARGV[0] == "-f" 
+  
+def find_location(images, id)
+  image = images.find {|i| i[:id] == id}
+  image.nil? ? id : image[:location]
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+  groups = ec2.describe_instances
+  images = ec2.describe_images if full
+  #pp groups
+  groups.each do |g| 
+    sg = g[:groups].join(' ')
+    g[:instances].each do |i|
+      image = i[:image_id]
+      image = find_location(images, image) if full
+      puts "#{i[:id]} #{i[:state]} #{image} #{i[:public_dns]} #{sg}"
+    end
+  end
+rescue
+  puts "error #{$!}"
+  exit 1
+end

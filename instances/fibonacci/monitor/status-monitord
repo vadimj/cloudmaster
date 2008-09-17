@@ -1,0 +1,27 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'monitor'
+require 'open-uri'
+
+aws_env = ENV['AWS_ENV']
+puts "Environment: #{aws_env}"
+
+begin
+  iid = open('http://169.254.169.254/latest/meta-data/instance-id').read(200)
+rescue
+  # when running locally, use fake iid
+  iid="iid-fake"
+end
+
+begin
+  monitor = MonitorDarwin.new(iid, "rtsp-work-#{aws_env}", "rtsp-status-#{aws_env}")
+  Signal.trap("INT") do
+    monitor.shutdown
+  end
+  monitor.run
+rescue 
+  puts "error #{$!}"
+end
+    
+
+

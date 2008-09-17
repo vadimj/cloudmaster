@@ -1,0 +1,26 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/S3'
+require 'configuration'
+require 'aws_context'
+require 'yaml'
+require 'pp'
+
+config = Cloudmaster::Configuration.new
+s3 = AwsContext.instance.s3(*config.keys)
+
+bucket = config.pools[0][:active_set_bucket]
+key = config.pools[0][:active_set_key]
+
+begin
+  obj = s3.get_object(bucket, key) do |data|
+    body = YAML.load(data)
+    body.each do |instance|
+      STDOUT.puts("#{instance[:public_dns]}|#{instance[:load_estimate]}")
+    end
+  end
+rescue
+  puts "not read"
+  exit 1
+end
+

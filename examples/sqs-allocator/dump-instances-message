@@ -1,0 +1,73 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/SQS'
+require 'configuration'
+require 'aws_context'
+require 'yaml'
+require 'pp'
+
+# Reads from a queue and dumps the instances messages into a file.
+# Each message replaces the file.
+# File contans instance id and the reported load.
+# Continues reading until interrupted.
+# Instances messages are sent by cloudmaster to notify of current instance set.
+# Queue name is the BASE name -- the env will be added to it.
+
+if ARGV.size != 1 then
+	puts "usage: dump-instances-message filename"
+	exit
+end
+filename = ARGV[0]
+
+config = Cloudmaster::Configuration.new
+sqs = AwsContext.instance.sqs(*config.keys)
+name = config.pools[0][:status_queue_name]
+
+def dump_file(filename, instances)
+  new_filename = filename + ".new"
+  File.open(new_filename, "w") do |f|
+    instances.each do |i|
+      public_dns = i[:public_dns]
+      load = i[:load]
+      if public_dns && load
+        f.puts "#{public_dns} #{load}"
+      end
+    end
+  end
+  File.delete(filename) rescue 0
+  File.rename(new_filename, filename)
+end
+
+def print_report(instances)
+  puts "--------#{Time.now}--------"
+  instances.each do |i|
+    public_dns = i[:public_dns]
+    load = i[:load]
+    if public_dns && load
+      puts "#{public_dns} #{load}"
+    end
+  end
+end
+
+begin
+  url = sqs.list_queues(name).first
+  if url.nil? 
+    puts "queue not found: #{name}"
+  else  
+    while true
+      res = sqs.receive_messages(url)
+      if res.nil? || res.length == 0
+        sleep 10
+      else
+        body = res[0][:body]
+        report = YAML.load(body)
+        dump_file(filename, report)
+        print_report(report)
+        sqs.delete_message(url, res[0][:id])
+      end
+    end
+  end
+rescue
+  puts "error #{$!} #{name}"
+end
+

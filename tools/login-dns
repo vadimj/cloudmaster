@@ -1,0 +1,11 @@
+#!/bin/bash
+
+#  Login to an instance given its dns name.
+
+if [ $# != 1 ]
+then
+  echo "usage: `basename $0` dns-name"
+  exit 1
+fi
+
+ssh -i $AWS_KEY root@$1

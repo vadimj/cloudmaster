@@ -1,0 +1,22 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/S3'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Display the names of all the buckets.
+if ARGV[0] == '-?'
+   puts "usage: list-buckets"
+   exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+s3 = AwsContext.instance.s3(*config.keys)
+buckets = s3.list_buckets
+#pp buckets[:buckets]
+buckets[:buckets].each {|b| puts "#{b[:name]} #{b[:creation_date]}"}

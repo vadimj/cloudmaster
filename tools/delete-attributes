@@ -1,0 +1,39 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/SimpleDB'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Delete a SimpleDB item's attributes
+
+if ARGV[0] == '-?' || ARGV.size < 2 then
+  puts "usage: delete-attributes domain-name item-name [attribute[:value]]*"
+  exit 1
+end
+domain_name = ARGV[0]
+item_name = ARGV[1]
+attributes = {}
+ARGV.shift; ARGV.shift
+ARGV.each do |arg|
+  av = arg.split(':', 2)
+  if av.size == 1
+    attributes.merge!({av[0] => nil})
+  else
+    attributes.merge!({av[0] => av[1]})
+  end
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+sdb = AwsContext.instance.sdb(*config.keys)
+begin
+  res = sdb.delete_attributes(domain_name, item_name, attributes)
+rescue
+  puts "error #{$!} #{domain_name} #{item_name}"
+  exit 1
+end
+

@@ -1,0 +1,29 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/SQS'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Display the names of each queue.
+
+if ARGV[0] == '-?'
+  puts "usage: list-queues"
+  exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+sqs = AwsContext.instance.sqs(*config.keys)
+begin
+  res = sqs.list_queues
+#  pp res
+  res.each { |q|  puts q }
+rescue
+  puts "error #{$!}"
+  exit 1
+end
+

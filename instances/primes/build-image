@@ -1,0 +1,52 @@
+#!/bin/bash
+#
+# Build a primes instance
+
+if [ X$AWS_HOME == X ]; then echo "You must set AWS_HOME"; exit 1; fi
+if [ X$AWS_USER == X ]
+then 
+  export AWS_USER=cloudmaster
+  echo "Defaulting AWS_USER to $AWS_USER"
+fi
+
+# Get envionment from config file.
+show-config >/tmp/config
+. /tmp/config
+rm /tmp/config
+
+if [ X$AWS_ACCESS_KEY == X ]; then echo "You must set AWS_ACCESS_KEY"; exit 1; fi
+if [ X$AWS_SECRET_KEY == X ]; then echo "You must set AWS_SECRET_KEY"; exit 1; fi
+if [ X$AWS_KEY == X ]
+then 
+  echo "Defaulting AWS_KEY to $HOME/keys/${AWS_USER}-kp.pem"
+  export AWS_KEY=$HOME/keys/${AWS_USER}-kp.pem
+fi
+
+# start base instance
+echo "start-instance $AWS_USER-ami-base"
+inst=`start-instance $AWS_USER-ami-base`
+
+# wait for it to be running
+wait-for-active-instance $inst
+
+# give it time to start
+sleep 20
+
+# prepare keys
+rm -rf /tmp/keys
+mkdir /tmp/keys
+cp `dirname $AWS_KEY`/* /tmp/keys
+
+# copy files to it
+echo "uploading"
+copy-to-instance $AWS_HOME/instances/primes/ /mnt $inst
+copy-to-instance $AWS_HOME/tools/ /mnt $inst
+copy-to-instance $AWS_HOME/lib/ /mnt $inst
+copy-to-instance /tmp/keys/ /mnt $inst
+
+# run the installer
+echo "installing"
+run-cmd-instance "cd /mnt/primes;./install $AWS_ENV" $inst
+
+# shut it down
+run-cmd-instance "poweroff" $inst

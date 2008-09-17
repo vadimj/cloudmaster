@@ -1,0 +1,29 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/SimpleDB'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Delete a SimpleDB domain.
+
+if ARGV[0] == '-?' || ARGV.size != 1 then
+	puts "usage: delete-domain name"
+	exit 1
+end
+name = ARGV[0]
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+sdb = AwsContext.instance.sdb(*config.keys)
+begin
+  res = sdb.delete_domain(name)
+  puts "deleted #{res}"
+rescue
+  puts "error #{$!} #{name}"
+  exit 1
+end
+

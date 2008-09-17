@@ -1,0 +1,23 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+
+require 'basic_configuration'
+require 'aws_context'
+require 'allocator'
+require 'pp'
+
+config = BasicConfiguration.new
+aws_bucket = config.aws[:aws_bucket]
+if aws_bucket.nil?
+  puts "Bucket must be set: define AWS_BUCKET in environment or config file."
+  exit 1
+end
+
+alloc = Allocator.new(aws_bucket, "active-set/fib-instances", "fib-work")
+public_dns = alloc.new_client
+
+if public_dns 
+  puts public_dns
+else
+  puts "no servers running"
+end
