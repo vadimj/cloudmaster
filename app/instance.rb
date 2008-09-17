@@ -8,7 +8,7 @@ module Cloudmaster
   #  * id -- instance id
   #  * public_dns -- the public dns name of the instance
   #  * load_estimate -- last reported load -- between 0 and 1
-  #  * state -- startup, active, shutdown
+  #  * state -- startup, active, shut_down
   #  * start_time -- (local) time when the instance was started
   #  * last_status_time -- (local) time when the last status was received
   #  * last_timestamp -- (remote) timestamp of last report
@@ -31,6 +31,7 @@ module Cloudmaster
       @public_dns = public_dns
       @load_estimate = 0
       @start_time = @status_time = Clock.now
+      @active_time = Clock.at(0)
       @state_change_time = Clock.now
       @timestamp = Clock.at(0)
       @state = :startup
@@ -42,6 +43,16 @@ module Cloudmaster
       "State: #{@state} Load: #{sprintf("%.2f", @load_estimate)} Time Since Status: #{time_since_status.round}"
     end
 
+    def update_state(state)
+      old_state, @state = @state, state
+      @state_change_time = Clock.now
+      if old_state != :active && @state == :active
+	@active_time = Clock.now
+      elsif @old_state == :active && @state != :active
+	@active_time = Clock.at(0)
+      end
+    end
+
     # Update the state and estimated load based on status message
     # Ignore the status message if it was sent earlier than
     # one we have already processed.  This is important, because
@@ -50,10 +61,7 @@ module Cloudmaster
       if message_more_recent?(msg[:timestamp])
         @timestamp = msg[:timestamp]
         @status_time = Clock.now
-        if msg[:state] 
-          @state = msg[:state].to_sym
-          @state_change_time = Clock.now
-        end
+	update_state(msg[:state].to_sym) if msg[:state] 
         @load_estimate = msg[:load_estimate] if msg[:load_estimate]
       end
     end
@@ -74,7 +82,7 @@ module Cloudmaster
       Clock.now - @status_time
     end
 
-    # Retrn the number of seconds since the last status message with
+    # Return the number of seconds since the last status message with
     # a state field in it.  This uses local times only.
     def time_since_state_change
       Clock.now - @state_change_time
@@ -85,16 +93,35 @@ module Cloudmaster
       Clock.now - @start_time
     end
 
+    # Return the number of seconds since the instance became active.
+    def time_since_active
+      Clock.now - @active_time
+    end
+
     public
 
     # Return true if the instance has lived at least as long
     # as its minimum lifetime.
     def minimum_lifetime_elapsed?
     lifetime = @config[:minimum_lifetime].to_i * 60
-    retrn true if lifetime <= 0
+    return true if lifetime <= 0
     time_since_startup > lifetime
     end
     
+    # Return true if the instance has been active at least as long
+    # as its minimum active time.
+    def minimum_active_time_elapsed?
+    active_time = @config[:minimum_active_time].to_i * 60
+    return true if active_time <= 0
+    time_since_active > active_time
+    end
+    
+    # Return true if the instance has lived and has been active for its
+    # respective minimum times.
+    def minimum_time_elapsed?
+      minimum_lifetime_elapsed? && minimum_active_time_elapsed?
+    end
+
     # Return true if the instance has not received a status message
     # in the watchdog interval.
     def watchdog_time_elapsed?
@@ -103,19 +130,17 @@ module Cloudmaster
       time_since_status > interval
     end
 
-    # Shut down an instance by putting it in the "shutdown" state.
+    # Shut down an instance by putting it in the "shut_down" state.
     # After this is can either be activated again or stopped.
     def shutdown
-      @state = :shut_down
-      @state_change_time = Clock.now
+      update_state(:shut_down)
     end
 
     # Make the instance active.  This is usually done after the
     # instance is shut down, but before it is stopped, it needs to
     # become active again.
     def activate
-      @state = :active
-      @state_change_time = Clock.now
+      update_state(:active)
     end
   end
 end

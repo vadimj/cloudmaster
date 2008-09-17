@@ -49,6 +49,8 @@ module Cloudmaster
 #    ===INSTANCE STOP POLICIES===
 #    stop_limit -- how many to stop at one time
 #    minimum_lifetime -- don't stop an instance unless it has run this long (minutes)
+#    minimum_active_time -- the minimum amount of time (in minutes) that an instance
+#      may remain in the active state
 #    watchdog_interval -- if a machine does not report status in this interval, it is
 #      considered to be hung, and is stopped
 #    ===JOB POLICIES===

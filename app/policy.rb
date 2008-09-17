@@ -79,8 +79,8 @@ module Cloudmaster
     # Returns the number stopped.
     def stop_instances_list(instances_to_stop, force = false)
       instances_to_stop = instances_to_stop.find_all do |instance|
-        # Don't stop instances before minimum_lifetime
-        force || instance.minimum_lifetime_elapsed?
+        # Don't stop instances before minimum_time
+        force || instance.minimum_time_elapsed?
       end
       instances = @instances.stop_instances(instances_to_stop)
       instances.each {|i| @reporter.info("Terminating instance ", i.id) }

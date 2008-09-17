@@ -39,7 +39,11 @@ module Cloudmaster
     def shut_down_n_instances(number_to_shut_down)
       return if number_to_shut_down <= 0
       instances_with_lowest_load = @instances.sorted_by_lowest_load
-      shut_down_instances(instances_with_lowest_load[0...number_to_shut_down])
+      instances_to_shut_down = instances_with_lowest_load.find_all do |instance|
+        # Don't stop instances before minimum_active_time
+        instance.minimum_active_time_elapsed?
+      end
+      shut_down_instances(instances_to_shut_down[0...number_to_shut_down])
     end
 
     # Stop any shut down instances with load below threshold.
