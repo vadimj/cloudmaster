@@ -49,10 +49,10 @@ module RetryAWS
       end
     end
     
-    def describe_instances(instance_ids=[])
+    def describe_instances(*instance_ids)
       retry_time = 1
       begin
-        @ec2.describe_instances(instance_ids)
+        @ec2.describe_instances(*instance_ids)
       rescue AWS::ServiceError => err
         retry if retry_time = retry?(err, retry_time)
         report_error []
@@ -73,10 +73,10 @@ module RetryAWS
       end
     end
 
-    def terminate_instances(instance_ids = [])
+    def terminate_instances(*instance_ids)
       retry_time = 1
       begin
-        @ec2.terminate_instances(instance_ids)
+        @ec2.terminate_instances(*instance_ids)
       rescue AWS::ServiceError => err
         retry if retry_time = retry?(err, retry_time)
         report_error []
