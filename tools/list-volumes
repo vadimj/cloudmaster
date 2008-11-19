@@ -1,0 +1,33 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/EC2'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Display information about all our volumes.
+
+if ARGV[0] == '-?' 
+  puts "usage: list-volumes [volume-id-list]"
+  exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+  volumes = ec2.describe_volumes
+  #pp volumes
+  volumes.each do |vol|
+    puts "#{vol[:volume_id]} #{vol[:snapshot_id]} #{vol[:size]} #{vol[:availability_zone]} #{vol[:status]}"
+    vol[:attachment_set].each do |att|
+      puts "  #{att[:status]} #{att[:volume_id]} #{att[:instance_id]} #{att[:device]}"
+    end
+  end
+rescue
+  puts "error #{$!}"
+  exit 1
+end

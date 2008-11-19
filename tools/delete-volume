@@ -1,0 +1,29 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/EC2'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Delete a volume.
+
+if ARGV[0] == '-?' || ARGV.size != 1 then
+	puts "usage: delete-volume volume-id"
+	exit 1
+end
+volume_id = ARGV[0]
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+  res = ec2.delete_volume(volume_id)
+  puts "deleted #{res}"
+rescue
+  puts "error #{$!} #{volume_id}"
+  exit 1
+end
+

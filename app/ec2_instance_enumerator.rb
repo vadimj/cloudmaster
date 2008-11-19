@@ -9,8 +9,8 @@ module Cloudmaster
     include Enumerable
 
     # Get the list of instances from EC2
-    def initialize(ids = [])
-      @instances =  AwsContext.instance.ec2.describe_instances(ids)
+    def initialize(*ids)
+      @instances =  AwsContext.instance.ec2.describe_instances(*ids)
     end
 
     # Enumerator each instance

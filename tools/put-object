@@ -26,7 +26,8 @@ if ARGV.size >= 3
 end
 
 config = BasicConfiguration.new
-if config.aws[:aws_bucket].nil?
+bucket = config.aws[:aws_bucket] unless bucket
+if bucket.nil?
   puts "AWS_BUCKET environment variable must be set or defined in config file."
   exit 1
 end
@@ -44,9 +45,9 @@ end
 
 s3 = AwsContext.instance.s3(*config.keys)
 begin
-  obj = s3.create_object(bucket, key, {:data => file, :access => :public-read})
+  obj = s3.create_object(bucket, key, {:data => file, :access => "public-read"})
   puts "stored #{fname} as #{key}"
-rescue
-  puts "error: #{$!} -- not stored"
-  exit 1
+#rescue
+#  puts "error: #{$!} -- not stored"
+#  exit 1
 end

@@ -27,6 +27,7 @@ if config.aws[:aws_bucket].nil?
   puts "AWS_BUCKET environment variable must be set or defined in config file."
   exit 1
 end
+aws_bucket = config.aws[:aws_bucket]
 
 Signal.trap("INT") do
   exit 2

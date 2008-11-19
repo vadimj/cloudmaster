@@ -1,0 +1,34 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/EC2'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Create a volume.
+
+if ARGV[0] == '-?' || ARGV.size != 2 then
+	puts "usage: create-volume avilability-zone size|snapshot-id"
+	exit 1
+end
+zone=ARGV[0]
+size_or_snapshot = ARGV[1]
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+  if size_or_snapshot =~ /snap/
+    res = ec2.create_volume_from_snapshot(size_or_snapshot, zone)
+  else
+    res = ec2.create_volume(size_or_snapshot, zone)
+  end
+  puts "created #{res[:volume_id]}"
+rescue
+  puts "error #{$!} #{size_or_snapshot}"
+  exit 1
+end
+

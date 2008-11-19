@@ -11,7 +11,7 @@ class EC2
   include AWS # Include the AWS module as a mixin
 
   ENDPOINT_URI = URI.parse("https://ec2.amazonaws.com/")
-  API_VERSION = '2007-08-29'
+  API_VERSION = '2008-08-08'
   SIGNATURE_VERSION = '1'
 
   HTTP_METHOD = 'POST' # 'GET'
@@ -44,6 +44,11 @@ class EC2
       item[:reason] = elems['reason'].text if elems['reason']
       item[:key_name] = elems['keyName'].text if elems['keyName']
       item[:index] = elems['amiLaunchIndex'].text if elems['amiLaunchIndex']
+      if elems['placement']
+        item[:zone] = elems['placement/availabilityZone'].text
+      end
+      item[:kernel_id] = elems['kernelId'].text if elems['kernelId']
+      item[:ramdisk_id] = elems['ramdiskId'].text if elems['ramdiskId']
 
       if elems['productCodes']
         item[:product_codes] = []
@@ -56,6 +61,29 @@ class EC2
     end
 
     return reservation
+  end
+
+  def parse_volume(elem)
+    volume = {
+      :volume_id => elem.elements['volumeId'].text,
+      :size => elem.elements['size'].text,
+      :status => elem.elements['status'].text,
+      :create_time => elem.elements['createTime'].text,
+      :snapshot_id => elem.elements['snapshotId'].text,
+      :availability_zone => elem.elements['availabilityZone'].text,
+    }
+    attachments = []
+    elem.elements.each('attachmentSet/item') do |attachment|
+      attachments << {
+        :volume_id => attachment.elements['volumeId'].text,
+        :instance_id => attachment.elements['instanceId'].text,
+        :device => attachment.elements['device'].text,
+        :status => attachment.elements['status'].text,
+        :attach_time => attachment.elements['attachTime'].text
+      }
+    end
+    volume[:attachment_set] = attachments
+    return volume
   end
 
   def describe_instances(*instance_ids)
@@ -74,6 +102,27 @@ class EC2
       reservations << parse_reservation(elem)
     end
     return reservations
+  end
+
+  def describe_availability_zones(*names)
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'DescribeAvailabilityZones',
+      },{
+      'ZoneName' => names
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+
+    zones = []
+    xml_doc.elements.each('//availabilityZoneInfo/item') do |elem|
+      zones << {
+        :name => elem.elements['zoneName'].text,
+        :state => elem.elements['zoneState'].text
+      }
+    end
+    return zones
   end
 
   def describe_keypairs(*keypair_names)
@@ -140,6 +189,9 @@ class EC2
     parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
       {
       'Action' => 'DescribeImages',
+      # Despite API documentation, the ImageType parameter is *not* supported, see:
+      # http://developer.amazonwebservices.com/connect/thread.jspa?threadID=20655&tstart=25
+      # 'ImageType' => options[:type]
       },{
       'ImageId' => options[:image_ids],
       'Owner' => options[:owners],
@@ -157,8 +209,19 @@ class EC2
         :state => image.elements['imageState'].text,
         :owner_id => image.elements['imageOwnerId'].text,
         :is_public => image.elements['isPublic'].text == 'true',
+        :architecture => image.elements['architecture'].text,
+        :type => image.elements['imageType'].text
       }
-
+      
+      # Items only available when listing 'machine' image types
+      # that have associated kernel and ramdisk metadata
+      if image.elements['kernelId'] 
+        image_details[:kernel_id] = image.elements['kernelId'].text
+      end
+      if image.elements['ramdiskId']
+        image_details[:ramdisk_id] = image.elements['ramdiskId'].text
+      end
+      
       image.elements.each('productCodes/item/productCode') do |code|
         image_details[:product_codes] ||= []
         image_details[:product_codes] << code.text
@@ -180,7 +243,10 @@ class EC2
       'KeyName' => options[:key_name],
       'InstanceType' => options[:instance_type],
       'UserData' => encode_base64(options[:user_data]),
-      'AddressingType' => options[:addressing_type]
+      
+      'Placement.AvailabilityZone' => options[:zone],
+      'KernelId' => options[:kernel_id],
+      'RamdiskId' => options[:ramdisk_id]
       },{
       'SecurityGroup' => options[:security_groups]
       })
@@ -479,6 +545,237 @@ class EC2
     }
     result[:owner_id] = elems['//ownerId'].text if elems['//ownerId']
     return result
+  end
+
+  def describe_addresses(*addresses)
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'DescribeAddresses',
+      },{
+      'PublicIp' => addresses
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+
+    addresses = []
+    xml_doc.elements.each('//addressesSet/item') do |elem|
+      addresses << {
+        :public_ip => elem.elements['publicIp'].text,
+        :instance_id => elem.elements['instanceId'].text
+      }
+    end
+    return addresses
+  end
+  
+  def allocate_address()
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'AllocateAddress',
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+    return xml_doc.elements['//publicIp'].text
+  end
+
+  def release_address(public_ip)
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'ReleaseAddress',
+      'PublicIp' => public_ip
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+    return xml_doc.elements['//return'].text == 'true'
+  end
+
+  def associate_address(instance_id, public_ip)
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'AssociateAddress',
+      'InstanceId' => instance_id,
+      'PublicIp' => public_ip
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+    return xml_doc.elements['//return'].text == 'true'
+  end
+
+  def disassociate_address(public_ip)
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'DisassociateAddress',
+      'PublicIp' => public_ip
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+    return xml_doc.elements['//return'].text == 'true'
+  end
+
+  def create_volume(size, availability_zone)
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'CreateVolume',
+      'Size' => size,
+      'AvailabilityZone' => availability_zone
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+    res = {}
+    res[:volume_id] = xml_doc.elements['//volumeId'].text
+    res[:size] = xml_doc.elements['//size'].text
+    res[:status] = xml_doc.elements['//status'].text
+    res[:create_time] = xml_doc.elements['//createTime'].text
+    res[:availability_zone] = xml_doc.elements['//availabilityZone'].text
+    res[:snapshot_id] = xml_doc.elements['//snapshotId'].text
+    res
+  end
+
+  def create_volume_from_snapshot(snapshot_id, availability_zone)
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'CreateVolume',
+      'SnapshotId' => snapshot_id,
+      'AvailabilityZone' => availability_zone
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+    res = {}
+    res[:volume_id] = xml_doc.elements['//volumeId'].text
+    res[:size] = xml_doc.elements['//size'].text
+    res[:status] = xml_doc.elements['//status'].text
+    res[:create_time] = xml_doc.elements['//createTime'].text
+    res[:availability_zone] = xml_doc.elements['//availabilityZone'].text
+    res[:snapshot_id] = xml_doc.elements['//snapshotId'].text
+    res
+  end
+
+  def delete_volume(volume_id)
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'DeleteVolume',
+      'VolumeId' => volume_id
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+    return xml_doc.elements['//return'].text == 'true'
+  end
+
+  def describe_volumes(*volume_ids)
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'DescribeVolumes',
+      },{
+      'VolumeId' => volume_ids
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+    volumes = []
+    xml_doc.elements.each('//volumeSet/item') do |elem|
+      volumes << parse_volume(elem)
+    end
+    return volumes
+  end
+
+  def attach_volume(volume_id, instance_id, device)
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'AttachVolume',
+      'VolumeId' => volume_id,
+      'InstanceId' => instance_id,
+      'Device' => device
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+    res = {}
+    res[:volume_id] = xml_doc.elements['//volumeId'].text
+    res[:instance_id] = xml_doc.elements['//instanceId'].text
+    res[:device] = xml_doc.elements['//device'].text
+    res[:status] = xml_doc.elements['//status'].text
+    res
+  end
+
+  def detach_volume(volume_id, instance_id = nil, device = nil, force = nil)
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'DetachVolume',
+      'VolumeId' => volume_id,
+      'InstanceId' => instance_id,
+      'Device' => device,
+      'Force' => force
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+    res = {}
+    res[:volume_id] = xml_doc.elements['//volumeId'].text
+    res[:instance_id] = xml_doc.elements['//instanceId'].text
+    res[:device] = xml_doc.elements['//device'].text
+    res[:status] = xml_doc.elements['//status'].text
+    res[:attach_time] = xml_doc.elements['//attachTime'].text
+    res
+  end
+
+  def create_snapshot(volume_id)
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'CreateSnapshot',
+      'VolumeId' => volume_id
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+    res = {}
+    res[:snapshot_id] = xml_doc.elements['//snapshotId'].text
+    res[:volume_id] = xml_doc.elements['//volumeId'].text
+    res[:status] = xml_doc.elements['//status'].text
+    res[:start_time] = xml_doc.elements['//startTime'].text
+    res[:progress] = xml_doc.elements['//progress'].text
+    res
+  end
+
+  def delete_snapshot(snapshot_id)
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'DeleteSnapshot',
+      'SnapshotId' => snapshot_id
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+    return xml_doc.elements['//return'].text == 'true'
+  end
+
+  def describe_snapshots(*snapshot_ids)
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'DescribeSnapshots',
+      },{
+      'SnapshotId' => snapshot_ids
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+    snapshots = []
+    xml_doc.elements.each('//snapshotSet/item') do |elem|
+      snapshots << {
+      :snapshot_id => elem.elements['snapshotId'].text,
+      :volume_id => elem.elements['volumeId'].text,
+      :status => elem.elements['status'].text,
+      :start_time => elem.elements['startTime'].text,
+      :progress =>  elem.elements['progress'].text    
+      }
+    end
+    return snapshots
   end
 
 end
