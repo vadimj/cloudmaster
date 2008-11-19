@@ -1,0 +1,31 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/EC2'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Display information on an ElasticIP addresses
+
+if ARGV[0] == '-?' then
+  puts "usage: describe-addresses"
+  exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+  addresses = ec2.describe_addresses
+  #pp addresses
+  addresses.each do |addr|
+    puts "#{addr[:public_ip]} #{addr[:instance_id]}"
+  end
+rescue
+  puts "error #{$!}"
+  exit 1
+end
+

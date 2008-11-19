@@ -1,0 +1,29 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/EC2'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Allocate an ElasticIP address
+
+if ARGV[0] == '-?' then
+  puts "usage: allocate-address"
+  exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+  public_ip = ec2.allocate_address
+  #pp public_ip
+  puts public_ip
+rescue
+  puts "error #{$!}"
+  exit 1
+end
+
