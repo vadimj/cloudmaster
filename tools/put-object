@@ -47,7 +47,7 @@ s3 = AwsContext.instance.s3(*config.keys)
 begin
   obj = s3.create_object(bucket, key, {:data => file, :access => "public-read"})
   puts "stored #{fname} as #{key}"
-#rescue
-#  puts "error: #{$!} -- not stored"
-#  exit 1
+rescue
+  puts "error: #{$!} -- not stored"
+  exit 1
 end
