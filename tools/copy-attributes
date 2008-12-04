@@ -1,0 +1,63 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/SimpleDB'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# Copy a SimpleDB item's attributes
+# If one or more attributes are given, only those are copied.
+# Otherwise all are copied.
+# The "-r" flag is passed on to put_attributes.
+
+if ARGV[0] == '-?' || ARGV.size < 4 then
+  puts "usage: copy-attributes from-domain-name from-item-name to-domain-name to-item-name [-r] [attribute]+"
+  exit 1
+end
+from_domain_name = ARGV[0]
+from_item_name = ARGV[1]
+to_domain_name = ARGV[2]
+to_item_name = ARGV[3]
+replace = false
+
+4.times { ARGV.shift }
+if ARGV[0] == '-r' 
+  replace = true
+  ARGV.shift
+end
+
+config = BasicConfiguration.new
+sdb = AwsContext.instance.sdb(*config.keys)
+
+attributes = {}
+begin
+  if ARGV.size > 0
+    ARGV.each do |arg|
+      res = sdb.get_attributes(from_domain_name, from_item_name, arg)
+      attributes.merge!({arg => res})
+    end
+  else
+    res = sdb.get_attributes(from_domain_name, from_item_name)
+     attributes.merge!(res)
+  end
+rescue
+  puts "error getting attributes #{$!} #{from_domain_name} #{from_item_name} #{to_domain_name} #{to_item_name}"
+  exit 1
+end
+    
+if attributes.length == 0
+  puts "error: #{from_domain_name} #{from_item_name}: no attribute values"
+  exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+begin
+  res = sdb.put_attributes(to_domain_name, to_item_name, attributes, replace)
+rescue
+  puts "error updating attributes #{$!} #{from_domain_name} #{from_item_name} #{to_domain_name} #{to_item_name}"
+  exit 1
+end
+
