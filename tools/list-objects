@@ -9,8 +9,14 @@ require 'pp'
 # The display can optionally be limited to a given prefix.
 
 if ARGV[0] == '-?' 
-  puts "usage: list-objects [prefix [bucket]]"
+  puts "usage: list-objects [-l] [prefix [bucket]]"
   exit 1
+end
+
+long = false
+if ARGV[0] == '-l'
+  long = true
+  ARGV.shift
 end
 
 if ARGV.size >= 1
@@ -41,7 +47,11 @@ begin
   else
     objs = s3.list_objects(bucket)
   end
-  objs[:objects].each {|o| puts "#{o[:key]}"}
+  if long
+    objs[:objects].each {|o| puts "#{o[:owner_name]} #{o[:size]} #{o[:last_modified]} #{o[:key]}"}
+  else
+    objs[:objects].each {|o| puts "#{o[:key]}"}
+  end
 rescue
   puts "error: #{$!} #{prefix} #{bucket}"
   exit 1
