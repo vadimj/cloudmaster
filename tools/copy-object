@@ -1,0 +1,38 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/S3'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+#  Put the contents of the given file into S3.
+#  If the key name is supplied, then it is used.
+#  Otherwise, the filename is used.
+#  The bucket may be supplied as an option.
+
+if ARGV[0] == '-?' || ARGV.size < 3 then
+  puts "usage: copy-object src_bucket src_key dest_bucket [dest_key]"
+  exit
+end
+src_bucket=ARGV[0]
+src_key=ARGV[1]
+dest_bucket=ARGV[2]
+dest_key=ARGV[3]
+if dest_key.nil?
+  dest_key = src_key
+end
+
+config = BasicConfiguration.new
+
+Signal.trap("INT") do
+  exit 2
+end
+
+s3 = AwsContext.instance.s3(*config.keys)
+begin
+  obj = s3.copy_object(src_bucket, src_key, dest_bucket, dest_key)
+  puts "copied #{src_bucket}/#{src_key} to #{dest_bucket}/#{dest_key}"
+rescue
+  puts "error: #{$!} -- not copied"
+  exit 1
+end
