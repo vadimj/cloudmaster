@@ -11,7 +11,7 @@ require 'pp'
 #  The bucket may be supplied as an option.
 
 if ARGV[0] == '-?' || ARGV.size < 1 then
-  puts "usage: put-object filename [key [bucket]]"
+  puts "usage: put-object filename [key [bucket [metadata*]]]"
   exit
 end
 fname=ARGV[0]
@@ -21,12 +21,20 @@ if ARGV.size >= 2
 else
   key = fname
 end
-if ARGV.size >= 3
-  bucket = ARGV[2]
+bucket = ARGV[2]
+m = ARGV[3..-1]
+if m
+  metadata = {}
+  m.each do |md|
+    k, v = md.split(':')
+    metadata[k] = v if k && v
+      end
 end
 
 config = BasicConfiguration.new
-bucket = config.aws[:aws_bucket] unless bucket
+if bucket.nil? || bucket == '-'
+  bucket = config.aws[:aws_bucket]
+end
 if bucket.nil?
   puts "AWS_BUCKET environment variable must be set or defined in config file."
   exit 1
@@ -45,7 +53,9 @@ end
 
 s3 = AwsContext.instance.s3(*config.keys)
 begin
-  obj = s3.create_object(bucket, key, {:data => file, :access => "public-read"})
+  opts = {:data => file, :access => "public-read"}
+  opts[:metadata] = metadata if metadata
+  obj = s3.create_object(bucket, key, opts)
   puts "stored #{fname} as #{key}"
 rescue
   puts "error: #{$!} -- not stored"
