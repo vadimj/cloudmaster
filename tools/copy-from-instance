@@ -38,7 +38,8 @@ end
 
 
 config = BasicConfiguration.new
-if config.aws[:aws_key].nil? 
+keyfile = config.aws[:aws_key]
+if keyfile.nil?
   puts "Keyfile must be specified in AWS_KEY environment variabe or in confg file."
   exit 1
 end
