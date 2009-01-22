@@ -1,10 +1,12 @@
-# Sample Ruby code for the O'Reilly book "Using AWS Infrastructure
+# Sample Ruby code for the O'Reilly book "Programming Amazon Web
 # Services" by James Murty.
 #
 # This code was written for Ruby version 1.8.6 or greater.
 #
 # The EC2 module implements the Query API of the Amazon Elastic Compute Cloud
 # service.
+#
+# Extended by Charles Hayden to cover EBS interface extensions.
 require 'AWS'
 
 class EC2

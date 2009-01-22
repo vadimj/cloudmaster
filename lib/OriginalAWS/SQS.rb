@@ -1,4 +1,4 @@
-# Sample Ruby code for the O'Reilly book "Using AWS Infrastructure
+# Sample Ruby code for the O'Reilly book "Programming Amazon Web
 # Services" by James Murty.
 #
 # This code was written for Ruby version 1.8.6 or greater.

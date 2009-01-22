@@ -1,4 +1,4 @@
-# Sample Ruby code for the O'Reilly book "Using AWS Infrastructure
+# Sample Ruby code for the O'Reilly book "Programming Amazon Web 
 # Services" by James Murty.
 #
 # This code was written for Ruby version 1.8.6 or greater.
@@ -68,6 +68,15 @@ class S3
     return URI.parse(request_uri)
   end
 
+
+  def get_owner_id
+    uri = generate_s3_uri()
+    response = do_rest('GET', uri)
+    buckets = []
+
+    xml_doc = REXML::Document.new(response.body)
+    xml_doc.elements['//Owner/ID'].text
+  end
 
   def list_buckets
     uri = generate_s3_uri()
