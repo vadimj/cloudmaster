@@ -5,10 +5,9 @@ require 'basic_configuration'
 require 'aws_context'
 require 'pp'
 
-#  Put the contents of the given file into S3.
-#  If the key name is supplied, then it is used.
-#  Otherwise, the filename is used.
-#  The bucket may be supplied as an option.
+#  Copy the given S3 object.
+#  If dest_key name is supplied, then it is used.
+#  Otherwise, the original object's key is used.
 
 if ARGV[0] == '-?' || ARGV.size < 3 then
   puts "usage: copy-object src_bucket src_key dest_bucket [dest_key]"
