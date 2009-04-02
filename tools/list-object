@@ -35,6 +35,9 @@ begin
   end
   #pp obj
 rescue
+  # For some reason, if there is no object with this key, the
+  # error sent by AWS comes out on stdout and the response body is
+  # not available for extracting the code and message.
   puts "error: #{$!} -- not listed"
   exit 1
 end

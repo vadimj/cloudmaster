@@ -88,7 +88,9 @@ module AWS
 
       # If an AWS error message is available, add its code and message
       # to the overall descriptive message
-      if @response.body and @response.body.index('<?xml') == 0
+      if @response.body and 
+        @response.body.respond_to?(:index) and 
+        @response.body.index('<?xml') == 0
         @aws_error_xml = REXML::Document.new(@response.body)
 
         aws_error_code = @aws_error_xml.elements['//Code'].text
