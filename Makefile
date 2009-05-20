@@ -1,8 +1,7 @@
 
 
 tar:
-	cd $AWS_HOME/..
-	tar cfv cloudmaster.tar `find cloudmaster|egrep -v \.svn`
+	tar cfv ../cloudmaster.tar -C.. --exclude=\.svn cloudmaster
 
 unit-test:   
 	cd $(AWS_HOME)/test; suite
