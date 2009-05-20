@@ -52,8 +52,8 @@ module MockAWS
       true
     end
 
-    def delete_message(queue_url, message_id)
-      @@messages[queue_url] = @@messages[queue_url].reject {|m| m[:id] == message_id}
+    def delete_message(queue_url, receipt_handle)
+      @@messages[queue_url] = @@messages[queue_url].reject {|m| m[:receipt_handle] == receipt_handle}
       true
     end
 

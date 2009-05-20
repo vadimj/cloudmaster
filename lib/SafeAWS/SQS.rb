@@ -56,9 +56,9 @@ module SafeAWS
       end
     end
 
-    def delete_message(queue_url, message_id)
+    def delete_message(queue_url, receipt_handle)
       begin
-        @sqs.delete_message(queue_url, message_id)
+        @sqs.delete_message(queue_url, receipt_handle)
       rescue
         report_error false
       end
