@@ -113,11 +113,11 @@ module AWS
   #
   # This method can be used to sign requests destined for the REST or
   # Query AWS API interfaces.
-  def generate_signature(request_description)
+  def generate_signature(request_description, digest='sha1')
     raise "aws_access_key is not set" if not @aws_access_key
     raise "aws_secret_key is not set" if not @aws_secret_key
 
-    digest_generator = OpenSSL::Digest::Digest.new('sha1')
+    digest_generator = OpenSSL::Digest::Digest.new(digest)
     digest = OpenSSL::HMAC.digest(digest_generator,
                                   @aws_secret_key,
                                   request_description)
@@ -185,9 +185,34 @@ module AWS
     end
 
     # Generate request description and signature, and add to the request
-    # as the parameter 'Signature'
-    req_desc = parameters.sort {|x,y| x[0].downcase <=> y[0].downcase}.to_s
-    signature = generate_signature(req_desc)
+    # as the parameter 'Signature'. Works for signature version 1 and 2.
+    if parameters['SignatureVersion'] == '1'
+      req_desc = parameters.sort {|x,y| x[0].downcase <=> y[0].downcase}.to_s
+      signature = generate_signature(req_desc)
+    elsif parameters['SignatureVersion'] == '2'
+      # Use the strongest HMAC algorithm: SHA 256
+      parameters['SignatureMethod'] = 'HmacSHA256' # 'HmacSHA1'
+      
+      # Sort, and encode parameters into a canonical string.
+      sorted_params = parameters.sort {|x,y| x[0] <=> y[0]}
+      encoded_params = sorted_params.collect do |p|
+        encoded = (CGI::escape(p[0].to_s) + 
+                   "=" + CGI::escape(p[1].to_s))
+        # Ensure spaces are encoded as '%20', not '+'
+        encoded.gsub('+', '%20')
+      end
+      params_string = encoded_params.join("&")
+      
+      # Generate the request description string
+      req_desc = 
+        method + "\n" + 
+        uri.host.downcase + "\n" + 
+        uri.request_uri + "\n" + 
+        params_string
+      
+      # Generate the HMAC signature, using the SHA 256 digest
+      signature = generate_signature(req_desc, digest='sha256')
+    end
     parameters['Signature'] = signature
 
     case method

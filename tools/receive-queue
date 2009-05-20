@@ -31,7 +31,7 @@ begin
     else
       #pp res
       puts "#{res[0][:body]}"
-      sqs.delete_message(url, res[0][:id])
+      sqs.delete_message(url, res[0][:receipt_handle])
     end
   end
 rescue

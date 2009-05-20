@@ -11,8 +11,8 @@ class SQS
   include AWS # Include the AWS module as a mixin
 
   ENDPOINT_URI = URI.parse("https://queue.amazonaws.com/")
-  API_VERSION = '2007-05-01'
-  SIGNATURE_VERSION = '1'
+  API_VERSION = '2009-02-01'
+  SIGNATURE_VERSION = '2'
 
   HTTP_METHOD = 'POST' # 'GET'
 
@@ -53,8 +53,7 @@ class SQS
   def delete_queue(queue_url, force_deletion=nil)
     parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
       {
-      'Action' => 'DeleteQueue',
-      'ForceDeletion' => force_deletion
+      'Action' => 'DeleteQueue'
       })
 
     response = do_query(HTTP_METHOD, URI.parse(queue_url), parameters)
@@ -66,18 +65,18 @@ class SQS
     parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
       {
       'Action' => 'GetQueueAttributes',
-      'Attribute' => attribute
+      },
+      {
+      'AttributeName' => [attribute]
       })
-
     response = do_query(HTTP_METHOD, URI.parse(queue_url), parameters)
 
     attributes = {}
     xml_doc = REXML::Document.new(response.body)
 
-    xml_doc.elements.each('//AttributedValue') do |att|
-      name = att.elements['Attribute'].text
-      # All currently supported attributes have integer values
-      value = att.elements['Value'].text.to_i
+    xml_doc.elements.each('//Attribute') do |att|
+      name = att.elements['Name'].text
+      value = att.elements['Value'].text
 
       attributes[name] = value
     end
@@ -89,8 +88,8 @@ class SQS
     parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
       {
       'Action' => 'SetQueueAttributes',
-      'Attribute' => attribute,
-      'Value' => value
+      'Attribute.Name' => attribute,
+      'Attribute.Value' => value
       })
 
     response = do_query(HTTP_METHOD, URI.parse(queue_url), parameters)
@@ -112,29 +111,16 @@ class SQS
     return xml_doc.elements['//MessageId'].text
   end
 
-  def peek_message(queue_url, message_id)
-    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
-      {
-      'Action' => 'PeekMessage',
-      'MessageId' => message_id
-      })
-
-    response = do_query(HTTP_METHOD, URI.parse(queue_url), parameters)
-
-    xml_doc = REXML::Document.new(response.body)
-
-    return {
-      :id => xml_doc.elements['//MessageId'].text,
-      :body => xml_doc.elements['//MessageBody'].text
-    }
-  end
-
-  def receive_messages(queue_url, maximum=1, visibility_timeout=nil)
+  def receive_messages(queue_url, maximum=1, visibility_timeout=nil, 
+    attributes = [])
     parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
       {
       'Action' => 'ReceiveMessage',
-      'NumberOfMessages' => maximum,
+      'MaxNumberOfMessages' => maximum,
       'VisibilityTimeout' => visibility_timeout
+      },
+      {
+      'AttributeName' => attributes
       })
 
     response = do_query(HTTP_METHOD, URI.parse(queue_url), parameters)
@@ -144,20 +130,31 @@ class SQS
     xml_doc = REXML::Document.new(response.body)
 
     xml_doc.elements.each('//Message') do |msg|
+      returned_attributes = {}
+
+      msg.elements.each('Attribute') do |att|
+        name = att.elements['Name'].text
+        value = att.elements['Value'].text
+        returned_attributes[name] = value
+      end
+
       msgs << {
         :id => msg.elements['MessageId'].text,
-        :body => msg.elements['MessageBody'].text
+        :receipt_handle => msg.elements['ReceiptHandle'].text,
+        :body => msg.elements['Body'].text,
+        :attributes => returned_attributes
       }
+
     end
 
     return msgs
   end
 
-  def delete_message(queue_url, message_id)
+  def delete_message(queue_url, receipt_handle)
     parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
       {
       'Action' => 'DeleteMessage',
-      'MessageId' => message_id
+      'ReceiptHandle' => receipt_handle
       })
 
     response = do_query(HTTP_METHOD, URI.parse(queue_url), parameters)
@@ -178,71 +175,35 @@ class SQS
     return true
   end
 
-  def list_grants(queue_url, options={})
+  # Permissions is an array of [user-id, action] pairs.
+  def add_permission(queue_url, label, permissions)
+    grantee = []
+    action = []
+    permissions.each do |perm|
+      grantee << perm[0]
+      action << perm[1]
+    end
     parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
       {
-      'Action' => 'ListGrants'
-      })
-
-    if options[:permission]
-      parameters['Permission'] = options[:permission]
-    end
-
-    if options[:grantee]
-      if options[:grantee].index('@')
-        parameters['Grantee.EmailAddress'] = options[:grantee]
-      else
-        parameters['Grantee.ID'] = options[:grantee]
-      end
-    end
-
-    response = do_query(HTTP_METHOD, URI.parse(queue_url), parameters)
-
-    grants = []
-
-    xml_doc = REXML::Document.new(response.body)
-
-    xml_doc.elements.each('//GrantList') do |grant|
-      grants << {
-        :id => grant.elements['Grantee/ID'].text,
-        :display_name => grant.elements['Grantee/DisplayName'].text,
-        :permission => grant.elements['Permission'].text
-      }
-    end
-
-    return grants
-  end
-
-  def add_grant(queue_url, grantee, permission)
-    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      'Action' => 'AddPermission',
+      'Label' => label
+      },
       {
-      'Action' => 'AddGrant',
-      'Permission' => permission
+      'AWSAccountId' => grantee,
+      'ActionName' => action
       })
-
-    if grantee.index('@')
-      parameters['Grantee.EmailAddress'] = grantee
-    else
-      parameters['Grantee.ID'] = grantee
-    end
 
     response = do_query(HTTP_METHOD, URI.parse(queue_url), parameters)
 
     return true
   end
 
-  def remove_grant(queue_url, grantee, permission)
+  def remove_permission(queue_url, label)
     parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
       {
-      'Action' => 'RemoveGrant',
-      'Permission' => permission
+      'Action' => 'RemovePermission',
+      'Label' => label
       })
-
-    if grantee.index('@')
-      parameters['Grantee.EmailAddress'] = grantee
-    else
-      parameters['Grantee.ID'] = grantee
-    end
 
     response = do_query(HTTP_METHOD, URI.parse(queue_url), parameters)
 
