@@ -23,7 +23,7 @@ begin
   obj = s3.create_bucket(name)
   puts "created"
 rescue
-  puts "not created"
+  puts "not created: #{$!}"
   exit 1
 end
 

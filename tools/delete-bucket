@@ -23,7 +23,7 @@ begin
   obj = s3.delete_bucket(name)
   puts "deleted"
 rescue
-  puts "not deleted"
+  puts "not deleted: #{$!}"
   exit 1
 end
 

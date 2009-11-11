@@ -50,6 +50,10 @@ class SQS
     return xml_doc.elements['//QueueUrl'].text
   end
 
+		def get_queue(queue_name)
+			list_queues(queue_name).first
+		end
+
   def delete_queue(queue_url, force_deletion=nil)
     parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
       {
@@ -142,7 +146,8 @@ class SQS
         :id => msg.elements['MessageId'].text,
         :receipt_handle => msg.elements['ReceiptHandle'].text,
         :body => msg.elements['Body'].text,
-        :attributes => returned_attributes
+		:body_md5 => msg.elements['MD5OfBody'].text,
+        :attributes => returned_attributes,
       }
 
     end
@@ -197,6 +202,13 @@ class SQS
 
     return true
   end
+
+  def get_permissions(queue_url)
+    policy = get_queue_attributes(queue_url, 'Policy')
+    return [] if policy.nil? or not policy.is_a?(Hash)
+    return policy['Statement']
+  end
+
 
   def remove_permission(queue_url, label)
     parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,

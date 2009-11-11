@@ -24,10 +24,18 @@ if ARGV[0] == '-?' || ARGV.size < 1
   puts "usage: start-instance image-id|image-name [security-group]"
   exit 1
 end
+
+# Check for large instance: 
+instance_size = nil
+if ARGV[0] == "--large"
+	instance_size = ARGV.shift	
+end
+
 name=ARGV[0]
 group = ARGV[1] if ARGV.size > 1
 
 opts = {:key_name => File.basename(keyfile, ".*"), :security_groups => [ group ]}
+opts[:instance_type] = 'm1.large' if instance_size == "--large"
 
 
 Signal.trap("INT") do

@@ -3,6 +3,8 @@ require 'AWS/SQS'
 require 'AWS/EC2'
 require 'AWS/S3'
 require 'AWS/SimpleDB'
+require 'AWS/AS'
+require 'AWS/ELB'
 require 'SafeAWS/SQS'
 require 'SafeAWS/EC2'
 require 'SafeAWS/S3'
@@ -39,7 +41,7 @@ class AwsContext
   def initialize(context, logger)
     @context = context
     @logger = logger
-    @ec2 = @sqs = @s3 = @sdb = nil
+    @ec2 = @sqs = @s3 = @sdb = @as = @elb = nil
   end
 
   # Create a AwsContext.
@@ -136,6 +138,18 @@ class AwsContext
     @sdb
   end
 
+  # Create an AS interface.
+  def create_as(*params)
+    @as = AWS::AS.new(*params)
+    @as
+  end
+
+  # Create an ELB interface.
+  def create_elb(*params)
+    @elb = AWS::ELB.new(*params)
+    @elb
+  end
+
   public
 
   # Return an EC2 interface.  Create on if needed.
@@ -160,6 +174,18 @@ class AwsContext
   # Note that the parameters (if given) are only used if the interface is created.
   def sdb(*params)
     @sdb || create_sdb(*params)
+  end
+
+  # Return an AS interface.  Create one if needed.
+  # Note that the parameters (if given) are only used if the interface is created.
+  def as(*params)
+    @as || create_as(*params)
+  end
+
+  # Return an ELB interface.  Create one if needed.
+  # Note that the parameters (if given) are only used if the interface is created.
+  def elb(*params)
+    @elb || create_elb(*params)
   end
 
 end

@@ -8,7 +8,7 @@ require 'pp'
 # Create a volume.
 
 if ARGV[0] == '-?' || ARGV.size != 2 then
-	puts "usage: create-volume avilability-zone size|snapshot-id"
+	puts "usage: create-volume availability-zone size|snapshot-id"
 	exit 1
 end
 zone=ARGV[0]

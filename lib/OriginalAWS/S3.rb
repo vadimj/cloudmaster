@@ -141,13 +141,21 @@ class S3
       xml_doc = REXML::Document.new(response.body)
 
       xml_doc.elements.each('//Contents') do |contents|
+        # for keys shared by others - Owner element is not set
+        begin
+            owner_id = contents.elements['Owner/ID'].text
+            owner_name = contents.elements['Owner/DisplayName'].text
+        rescue
+            owner_id = nil
+            owner_name = nil
+        end
         objects << {
           :key => contents.elements['Key'].text,
           :size => contents.elements['Size'].text,
           :last_modified => contents.elements['LastModified'].text,
           :etag => contents.elements['ETag'].text,
-          :owner_id => contents.elements['Owner/ID'].text,
-          :owner_name => contents.elements['Owner/DisplayName'].text
+          :owner_id => owner_id,
+          :owner_name => owner_name
         }
       end
 

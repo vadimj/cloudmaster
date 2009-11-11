@@ -22,7 +22,7 @@ begin
   snapshots = ec2.describe_snapshots
 #  pp snapshots
   snapshots.each do |ss|
-    puts "#{ss[:snapshot_id]} #{ss[:volume_id]} #{ss[:progress]} #{ss[:status]}"
+    puts "#{ss[:snapshot_id]} #{ss[:volume_id]} #{ss[:progress]} #{ss[:status]} #{ss[:start_time]}"
   end
 rescue
   puts "error #{$!}"

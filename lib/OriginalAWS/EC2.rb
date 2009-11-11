@@ -13,7 +13,7 @@ class EC2
   include AWS # Include the AWS module as a mixin
 
   ENDPOINT_URI = URI.parse("https://ec2.amazonaws.com/")
-  API_VERSION = '2008-08-08'
+  API_VERSION = '2009-08-15'
   SIGNATURE_VERSION = '1'
 
   HTTP_METHOD = 'POST' # 'GET'
@@ -778,6 +778,47 @@ class EC2
       }
     end
     return snapshots
+  end
+
+  def describe_snapshot_attribute(snapshot_id, attribute='createVolumePermission')
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'DescribeSnapshotAttribute',
+      'SnapshotId' => snapshot_id,
+      'Attribute' => attribute,
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+
+    result = {:id => xml_doc.elements['//snapshotId'].text}
+
+    if xml_doc.elements['//createVolumePermission']
+      result[:create_volume_user] = []
+      result[:create_volume_group] = []
+      xml_doc.elements.each('//createVolumePermission/item') do |lp|
+        elems = lp.elements
+        result[:create_volume_group] << elems['group'].text if elems['group']
+        result[:create_volume_user] << elems['userId'].text if elems['userId']
+      end
+    end
+
+    return result
+  end
+
+  def modify_snapshot_attribute(snapshot_id, attribute,
+                             operation_type, attribute_values)
+
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'ModifySnapshotAttribute',
+      'SnapshotId' => snapshot_id,
+      'Attribute' => attribute,
+      'OperationType' => operation_type,
+      }, attribute_values)
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    return true
   end
 
 end

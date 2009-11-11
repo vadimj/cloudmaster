@@ -36,7 +36,7 @@ begin
     g[:instances].each do |i|
       image = i[:image_id]
       image = find_location(images, image) if full
-      puts "#{i[:id]} #{i[:state]} #{image} #{i[:public_dns]} #{sg}"
+      puts "#{i[:id]} #{i[:state]} #{image} #{i[:public_dns]} #{i[:key_name]} #{i[:type]} #{sg}"
     end
   end
 rescue
