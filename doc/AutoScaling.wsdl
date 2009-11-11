@@ -1,0 +1,961 @@
+<?xml version="1.0"?>
+<wsdl:definitions
+  targetNamespace="http://autoscaling.amazonaws.com/doc/2009-05-15/"
+  xmlns:tns="http://autoscaling.amazonaws.com/doc/2009-05-15/"
+  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+  xmlns:wsa="http://www.w3.org/2005/08/addressing/"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <wsdl:types>
+
+    <xs:schema
+      targetNamespace="http://autoscaling.amazonaws.com/doc/2009-05-15/"
+      elementFormDefault="qualified">
+
+      <xs:element name="ResponseMetadata">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="RequestId" type="xs:string"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="Error">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Type">
+              <xs:simpleType>
+                <xs:restriction base="xs:string">
+                  <xs:enumeration value="Receiver"/>
+                  <xs:enumeration value="Sender"/>
+                </xs:restriction>
+              </xs:simpleType>
+            </xs:element>
+            <xs:element name="Code" type="xs:string"/>
+            <xs:element name="Message" type="xs:string"/>
+            <xs:element name="Detail">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:any maxOccurs="unbounded" minOccurs="0" namespace="##any" processContents="lax"/>
+                </xs:sequence>
+                <xs:anyAttribute namespace="##other" processContents="lax"/>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="ErrorResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element ref="tns:Error" maxOccurs="unbounded"/>
+            <xs:element name="RequestId" type="xs:string"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DeleteLaunchConfiguration">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="LaunchConfigurationName" type="tns:LaunchConfigurationName"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DeleteLaunchConfigurationResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element ref="tns:ResponseMetadata" minOccurs="1"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DescribeTriggers">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="AutoScalingGroupName" type="tns:AutoScalingGroupName"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DescribeTriggersResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element ref="tns:DescribeTriggersResult"/>
+            <xs:element ref="tns:ResponseMetadata" minOccurs="1"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DescribeTriggersResult">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="Triggers" type="tns:Triggers"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="UpdateAutoScalingGroup">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="AutoScalingGroupName" type="tns:AutoScalingGroupName"/>
+          <xs:element name="LaunchConfigurationName" type="tns:LaunchConfigurationName" minOccurs="0"/>
+          <xs:element name="MinSize" type="xs:integer" minOccurs="0"/>
+          <xs:element name="MaxSize" type="xs:integer" minOccurs="0"/>
+          <xs:element name="Cooldown" type="xs:integer" minOccurs="0"/>
+          <xs:element name="AvailabilityZones" type="tns:AvailabilityZones" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="UpdateAutoScalingGroupResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element ref="tns:ResponseMetadata" minOccurs="1"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="CreateAutoScalingGroup">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="AutoScalingGroupName" type="tns:AutoScalingGroupName"/>
+          <xs:element name="LaunchConfigurationName" type="tns:LaunchConfigurationName"/>
+          <xs:element name="MinSize" type="xs:integer"/>
+          <xs:element name="MaxSize" type="xs:integer"/>
+          <xs:element name="Cooldown" type="xs:integer" minOccurs="0"/>
+          <xs:element name="AvailabilityZones" type="tns:AvailabilityZones"/>
+          <xs:element name="LoadBalancerNames" type="tns:LoadBalancerNames" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="CreateAutoScalingGroupResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element ref="tns:ResponseMetadata" minOccurs="1"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DeleteTrigger">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="AutoScalingGroupName" type="tns:AutoScalingGroupName"/>
+          <xs:element name="TriggerName" type="tns:TriggerName"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DeleteTriggerResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element ref="tns:ResponseMetadata" minOccurs="1"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="TerminateInstanceInAutoScalingGroup">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="InstanceId" type="tns:InstanceId"/>
+          <xs:element name="ShouldDecrementDesiredCapacity" type="xs:boolean"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="TerminateInstanceInAutoScalingGroupResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element ref="tns:TerminateInstanceInAutoScalingGroupResult"/>
+            <xs:element ref="tns:ResponseMetadata" minOccurs="1"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="TerminateInstanceInAutoScalingGroupResult">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="Activity" type="tns:Activity" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="CreateOrUpdateScalingTrigger">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="TriggerName" type="tns:TriggerName"/>
+          <xs:element name="AutoScalingGroupName" type="tns:AutoScalingGroupName"/>
+          <xs:element name="MeasureName" type="tns:MeasureName"/>
+          <xs:element name="Statistic" type="tns:MetricStatistic"/>
+          <xs:element name="Dimensions" type="tns:Dimensions"/>
+          <xs:element name="Period" type="xs:integer"/>
+          <xs:element name="Unit" type="tns:StandardUnit" minOccurs="0"/>
+          <xs:element name="CustomUnit" type="xs:string" minOccurs="0"/>
+          <xs:element name="Namespace" type="tns:Namespace" minOccurs="0"/>
+          <xs:element name="LowerThreshold" type="xs:double"/>
+          <xs:element name="LowerBreachScaleIncrement" type="tns:ScalingIncrement"/>
+          <xs:element name="UpperThreshold" type="xs:double"/>
+          <xs:element name="UpperBreachScaleIncrement" type="tns:ScalingIncrement"/>
+          <xs:element name="BreachDuration" type="tns:BreachDuration"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="CreateOrUpdateScalingTriggerResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element ref="tns:ResponseMetadata" minOccurs="1"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DescribeAutoScalingGroups">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="AutoScalingGroupNames" type="tns:AutoScalingGroupNames" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DescribeAutoScalingGroupsResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element ref="tns:DescribeAutoScalingGroupsResult"/>
+            <xs:element ref="tns:ResponseMetadata" minOccurs="1"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DescribeAutoScalingGroupsResult">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="AutoScalingGroups" type="tns:AutoScalingGroups"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="CreateLaunchConfiguration">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="LaunchConfigurationName" type="tns:LaunchConfigurationName"/>
+          <xs:element name="ImageId" type="tns:ImageId"/>
+          <xs:element name="KeyName" type="tns:KeyName" minOccurs="0"/>
+          <xs:element name="SecurityGroups" type="tns:SecurityGroups" minOccurs="0"/>
+          <xs:element name="UserData" type="tns:UserData" minOccurs="0"/>
+          <xs:element name="InstanceType" type="tns:InstanceType"/>
+          <xs:element name="KernelId" type="tns:KernelId" minOccurs="0"/>
+          <xs:element name="RamdiskId" type="tns:RamdiskId" minOccurs="0"/>
+          <xs:element name="BlockDeviceMappings" type="tns:BlockDeviceMappings" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="CreateLaunchConfigurationResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element ref="tns:ResponseMetadata" minOccurs="1"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DescribeLaunchConfigurations">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="LaunchConfigurationNames" type="tns:LaunchConfigurationNames" minOccurs="0"/>
+          <xs:element name="NextToken" type="xs:string" minOccurs="0"/>
+          <xs:element name="MaxRecords" type="tns:MaxRecords" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DescribeLaunchConfigurationsResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element ref="tns:DescribeLaunchConfigurationsResult"/>
+            <xs:element ref="tns:ResponseMetadata" minOccurs="1"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DescribeLaunchConfigurationsResult">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="LaunchConfigurations" type="tns:LaunchConfigurations"/>
+          <xs:element name="NextToken" type="xs:string" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DescribeScalingActivities">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="ActivityIds" type="tns:ActivityIds" minOccurs="0"/>
+          <xs:element name="AutoScalingGroupName" type="tns:AutoScalingGroupName"/>
+          <xs:element name="MaxRecords" type="tns:MaxRecords" minOccurs="0"/>
+          <xs:element name="NextToken" type="xs:string" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DescribeScalingActivitiesResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element ref="tns:DescribeScalingActivitiesResult"/>
+            <xs:element ref="tns:ResponseMetadata" minOccurs="1"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DescribeScalingActivitiesResult">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="Activities" type="tns:Activities"/>
+          <xs:element name="NextToken" type="xs:string" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="SetDesiredCapacity">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="AutoScalingGroupName" type="tns:AutoScalingGroupName"/>
+          <xs:element name="DesiredCapacity" type="xs:integer"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="SetDesiredCapacityResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element ref="tns:ResponseMetadata" minOccurs="1"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DeleteAutoScalingGroup">
+        <xs:complexType>
+          <xs:sequence>
+          <xs:element name="AutoScalingGroupName" type="tns:AutoScalingGroupName"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DeleteAutoScalingGroupResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element ref="tns:ResponseMetadata" minOccurs="1"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:simpleType name="RamdiskId">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:complexType name="SecurityGroups">
+        <xs:sequence>
+          <xs:element name="member" type="xs:string" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:simpleType name="MeasureName">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:complexType name="Instances">
+        <xs:sequence>
+          <xs:element name="member" type="tns:Instance" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:complexType name="AutoScalingGroup">
+        <xs:sequence>
+          <xs:element name="AutoScalingGroupName" type="tns:AutoScalingGroupName"/>
+          <xs:element name="LaunchConfigurationName" type="tns:LaunchConfigurationName"/>
+          <xs:element name="MinSize" type="xs:integer"/>
+          <xs:element name="MaxSize" type="xs:integer"/>
+          <xs:element name="DesiredCapacity" type="xs:integer"/>
+          <xs:element name="Cooldown" type="xs:integer"/>
+          <xs:element name="AvailabilityZones" type="tns:AvailabilityZones"/>
+          <xs:element name="LoadBalancerNames" type="tns:LoadBalancerNames" minOccurs="0"/>
+          <xs:element name="Instances" type="tns:Instances" minOccurs="0"/>
+          <xs:element name="CreatedTime" type="xs:dateTime"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:simpleType name="BlockDeviceVirtualName">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:simpleType name="Namespace">
+        <xs:restriction base="xs:string">
+          <xs:pattern value="[^:].*"/>
+          <xs:minLength value="1"/>
+          <xs:maxLength value="100"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:simpleType name="DimensionValue">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:simpleType name="UserData">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="0"/>
+          <xs:maxLength value="21847"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:simpleType name="KeyName">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:complexType name="Dimension">
+        <xs:sequence>
+          <xs:element name="Name" type="tns:DimensionName"/>
+          <xs:element name="Value" type="tns:DimensionValue"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:simpleType name="Cause">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:simpleType name="KernelId">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:complexType name="Dimensions">
+        <xs:sequence>
+          <xs:element name="member" type="tns:Dimension" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:simpleType name="AutoScalingGroupName">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:complexType name="AvailabilityZones">
+        <xs:sequence>
+          <xs:element name="member" type="tns:AvailabilityZone" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:simpleType name="InstanceLifecycleState">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="32"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:simpleType name="Status">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:simpleType name="StandardUnit">
+        <xs:restriction base="xs:string">
+          <xs:pattern value="(Seconds|Bytes|Bits|Percent|Count|Bytes/Second|Bits/Second|Count/Second|None)"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:simpleType name="DimensionName">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:complexType name="Triggers">
+        <xs:sequence>
+          <xs:element name="member" type="tns:Trigger" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:simpleType name="LaunchConfigurationName">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:complexType name="Instance">
+        <xs:sequence>
+          <xs:element name="InstanceId" type="tns:InstanceId"/>
+          <xs:element name="AvailabilityZone" type="tns:AvailabilityZone"/>
+          <xs:element name="LifecycleState" type="tns:InstanceLifecycleState"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:complexType name="LoadBalancerNames">
+        <xs:sequence>
+          <xs:element name="member" type="tns:LoadBalancerName" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:complexType name="BlockDeviceMappings">
+        <xs:sequence>
+          <xs:element name="member" type="tns:BlockDeviceMapping" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:simpleType name="AvailabilityZone">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:complexType name="AutoScalingGroups">
+        <xs:sequence>
+          <xs:element name="member" type="tns:AutoScalingGroup" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:complexType name="Trigger">
+        <xs:sequence>
+          <xs:element name="TriggerName" type="tns:TriggerName"/>
+          <xs:element name="AutoScalingGroupName" type="tns:AutoScalingGroupName"/>
+          <xs:element name="MeasureName" type="tns:MeasureName"/>
+          <xs:element name="Statistic" type="tns:MetricStatistic"/>
+          <xs:element name="Dimensions" type="tns:Dimensions"/>
+          <xs:element name="Period" type="xs:integer"/>
+          <xs:element name="Unit" type="tns:StandardUnit" minOccurs="0"/>
+          <xs:element name="CustomUnit" type="xs:string" minOccurs="0"/>
+          <xs:element name="Namespace" type="tns:Namespace" minOccurs="0"/>
+          <xs:element name="LowerThreshold" type="xs:double"/>
+          <xs:element name="LowerBreachScaleIncrement" type="tns:ScalingIncrement"/>
+          <xs:element name="UpperThreshold" type="xs:double"/>
+          <xs:element name="UpperBreachScaleIncrement" type="tns:ScalingIncrement"/>
+          <xs:element name="BreachDuration" type="tns:BreachDuration"/>
+          <xs:element name="Status" type="tns:Status"/>
+          <xs:element name="CreatedTime" type="xs:dateTime"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:simpleType name="BlockDeviceDeviceName">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:complexType name="BlockDeviceMapping">
+        <xs:sequence>
+          <xs:element name="VirtualName" type="tns:BlockDeviceVirtualName"/>
+          <xs:element name="DeviceName" type="tns:BlockDeviceDeviceName"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:simpleType name="LoadBalancerName">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:simpleType name="MaxRecords">
+        <xs:restriction base="xs:integer">
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:simpleType name="BreachDuration">
+        <xs:restriction base="xs:integer">
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:complexType name="Activity">
+        <xs:sequence>
+          <xs:element name="ActivityId" type="xs:string"/>
+          <xs:element name="Description" type="xs:string" minOccurs="0"/>
+          <xs:element name="Cause" type="tns:Cause"/>
+          <xs:element name="StartTime" type="xs:dateTime"/>
+          <xs:element name="EndTime" type="xs:dateTime" minOccurs="0"/>
+          <xs:element name="StatusCode" type="xs:string"/>
+          <xs:element name="StatusMessage" type="xs:string" minOccurs="0"/>
+          <xs:element name="Progress" type="xs:integer" minOccurs="0"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:simpleType name="InstanceType">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:simpleType name="InstanceId">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="16"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:complexType name="LaunchConfigurations">
+        <xs:sequence>
+          <xs:element name="member" type="tns:LaunchConfiguration" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:simpleType name="ScalingIncrement">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:complexType name="AutoScalingGroupNames">
+        <xs:sequence>
+          <xs:element name="member" type="tns:AutoScalingGroupName" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:simpleType name="MetricStatistic">
+        <xs:restriction base="xs:string">
+          <xs:pattern value="(Average|Sum|Minimum|Maximum)"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:simpleType name="TriggerName">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+      <xs:complexType name="ActivityIds">
+        <xs:sequence>
+          <xs:element name="member" type="xs:string" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:complexType name="LaunchConfiguration">
+        <xs:sequence>
+          <xs:element name="LaunchConfigurationName" type="tns:LaunchConfigurationName"/>
+          <xs:element name="ImageId" type="tns:ImageId"/>
+          <xs:element name="KeyName" type="tns:KeyName" minOccurs="0"/>
+          <xs:element name="SecurityGroups" type="tns:SecurityGroups" minOccurs="0"/>
+          <xs:element name="UserData" type="tns:UserData" minOccurs="0"/>
+          <xs:element name="InstanceType" type="tns:InstanceType"/>
+          <xs:element name="KernelId" type="tns:KernelId" minOccurs="0"/>
+          <xs:element name="RamdiskId" type="tns:RamdiskId" minOccurs="0"/>
+          <xs:element name="BlockDeviceMappings" type="tns:BlockDeviceMappings" minOccurs="0"/>
+          <xs:element name="CreatedTime" type="xs:dateTime"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:complexType name="LaunchConfigurationNames">
+        <xs:sequence>
+          <xs:element name="member" type="tns:LaunchConfigurationName" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:complexType name="Activities">
+        <xs:sequence>
+          <xs:element name="member" type="tns:Activity" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+
+      <xs:simpleType name="ImageId">
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"/>
+          <xs:maxLength value="255"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+    </xs:schema>
+
+  </wsdl:types>
+
+  <wsdl:message name="DeleteLaunchConfigurationRequestMsg">
+    <wsdl:part element="tns:DeleteLaunchConfiguration" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="DeleteLaunchConfigurationResponseMsg">
+    <wsdl:part element="tns:DeleteLaunchConfigurationResponse" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="DescribeTriggersRequestMsg">
+    <wsdl:part element="tns:DescribeTriggers" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="DescribeTriggersResponseMsg">
+    <wsdl:part element="tns:DescribeTriggersResponse" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="UpdateAutoScalingGroupRequestMsg">
+    <wsdl:part element="tns:UpdateAutoScalingGroup" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="UpdateAutoScalingGroupResponseMsg">
+    <wsdl:part element="tns:UpdateAutoScalingGroupResponse" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="CreateAutoScalingGroupRequestMsg">
+    <wsdl:part element="tns:CreateAutoScalingGroup" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="CreateAutoScalingGroupResponseMsg">
+    <wsdl:part element="tns:CreateAutoScalingGroupResponse" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="DeleteTriggerRequestMsg">
+    <wsdl:part element="tns:DeleteTrigger" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="DeleteTriggerResponseMsg">
+    <wsdl:part element="tns:DeleteTriggerResponse" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="TerminateInstanceInAutoScalingGroupRequestMsg">
+    <wsdl:part element="tns:TerminateInstanceInAutoScalingGroup" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="TerminateInstanceInAutoScalingGroupResponseMsg">
+    <wsdl:part element="tns:TerminateInstanceInAutoScalingGroupResponse" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="CreateOrUpdateScalingTriggerRequestMsg">
+    <wsdl:part element="tns:CreateOrUpdateScalingTrigger" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="CreateOrUpdateScalingTriggerResponseMsg">
+    <wsdl:part element="tns:CreateOrUpdateScalingTriggerResponse" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="DescribeAutoScalingGroupsRequestMsg">
+    <wsdl:part element="tns:DescribeAutoScalingGroups" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="DescribeAutoScalingGroupsResponseMsg">
+    <wsdl:part element="tns:DescribeAutoScalingGroupsResponse" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="CreateLaunchConfigurationRequestMsg">
+    <wsdl:part element="tns:CreateLaunchConfiguration" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="CreateLaunchConfigurationResponseMsg">
+    <wsdl:part element="tns:CreateLaunchConfigurationResponse" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="DescribeLaunchConfigurationsRequestMsg">
+    <wsdl:part element="tns:DescribeLaunchConfigurations" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="DescribeLaunchConfigurationsResponseMsg">
+    <wsdl:part element="tns:DescribeLaunchConfigurationsResponse" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="DescribeScalingActivitiesRequestMsg">
+    <wsdl:part element="tns:DescribeScalingActivities" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="DescribeScalingActivitiesResponseMsg">
+    <wsdl:part element="tns:DescribeScalingActivitiesResponse" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="SetDesiredCapacityRequestMsg">
+    <wsdl:part element="tns:SetDesiredCapacity" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="SetDesiredCapacityResponseMsg">
+    <wsdl:part element="tns:SetDesiredCapacityResponse" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="DeleteAutoScalingGroupRequestMsg">
+    <wsdl:part element="tns:DeleteAutoScalingGroup" name="body"/>
+  </wsdl:message>
+
+  <wsdl:message name="DeleteAutoScalingGroupResponseMsg">
+    <wsdl:part element="tns:DeleteAutoScalingGroupResponse" name="body"/>
+  </wsdl:message>
+
+  <wsdl:portType name="AutoScalingPortType">
+
+    <wsdl:operation name="DeleteLaunchConfiguration">
+      <wsdl:input message="tns:DeleteLaunchConfigurationRequestMsg" wsa:Action="urn:DeleteLaunchConfiguration"/>
+      <wsdl:output message="tns:DeleteLaunchConfigurationResponseMsg" wsa:Action="urn:DeleteLaunchConfiguration:Response"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="DescribeTriggers">
+      <wsdl:input message="tns:DescribeTriggersRequestMsg" wsa:Action="urn:DescribeTriggers"/>
+      <wsdl:output message="tns:DescribeTriggersResponseMsg" wsa:Action="urn:DescribeTriggers:Response"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="UpdateAutoScalingGroup">
+      <wsdl:input message="tns:UpdateAutoScalingGroupRequestMsg" wsa:Action="urn:UpdateAutoScalingGroup"/>
+      <wsdl:output message="tns:UpdateAutoScalingGroupResponseMsg" wsa:Action="urn:UpdateAutoScalingGroup:Response"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="CreateAutoScalingGroup">
+      <wsdl:input message="tns:CreateAutoScalingGroupRequestMsg" wsa:Action="urn:CreateAutoScalingGroup"/>
+      <wsdl:output message="tns:CreateAutoScalingGroupResponseMsg" wsa:Action="urn:CreateAutoScalingGroup:Response"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="DeleteTrigger">
+      <wsdl:input message="tns:DeleteTriggerRequestMsg" wsa:Action="urn:DeleteTrigger"/>
+      <wsdl:output message="tns:DeleteTriggerResponseMsg" wsa:Action="urn:DeleteTrigger:Response"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="TerminateInstanceInAutoScalingGroup">
+      <wsdl:input message="tns:TerminateInstanceInAutoScalingGroupRequestMsg" wsa:Action="urn:TerminateInstanceInAutoScalingGroup"/>
+      <wsdl:output message="tns:TerminateInstanceInAutoScalingGroupResponseMsg" wsa:Action="urn:TerminateInstanceInAutoScalingGroup:Response"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="CreateOrUpdateScalingTrigger">
+      <wsdl:input message="tns:CreateOrUpdateScalingTriggerRequestMsg" wsa:Action="urn:CreateOrUpdateScalingTrigger"/>
+      <wsdl:output message="tns:CreateOrUpdateScalingTriggerResponseMsg" wsa:Action="urn:CreateOrUpdateScalingTrigger:Response"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="DescribeAutoScalingGroups">
+      <wsdl:input message="tns:DescribeAutoScalingGroupsRequestMsg" wsa:Action="urn:DescribeAutoScalingGroups"/>
+      <wsdl:output message="tns:DescribeAutoScalingGroupsResponseMsg" wsa:Action="urn:DescribeAutoScalingGroups:Response"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="CreateLaunchConfiguration">
+      <wsdl:input message="tns:CreateLaunchConfigurationRequestMsg" wsa:Action="urn:CreateLaunchConfiguration"/>
+      <wsdl:output message="tns:CreateLaunchConfigurationResponseMsg" wsa:Action="urn:CreateLaunchConfiguration:Response"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="DescribeLaunchConfigurations">
+      <wsdl:input message="tns:DescribeLaunchConfigurationsRequestMsg" wsa:Action="urn:DescribeLaunchConfigurations"/>
+      <wsdl:output message="tns:DescribeLaunchConfigurationsResponseMsg" wsa:Action="urn:DescribeLaunchConfigurations:Response"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="DescribeScalingActivities">
+      <wsdl:input message="tns:DescribeScalingActivitiesRequestMsg" wsa:Action="urn:DescribeScalingActivities"/>
+      <wsdl:output message="tns:DescribeScalingActivitiesResponseMsg" wsa:Action="urn:DescribeScalingActivities:Response"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="SetDesiredCapacity">
+      <wsdl:input message="tns:SetDesiredCapacityRequestMsg" wsa:Action="urn:SetDesiredCapacity"/>
+      <wsdl:output message="tns:SetDesiredCapacityResponseMsg" wsa:Action="urn:SetDesiredCapacity:Response"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="DeleteAutoScalingGroup">
+      <wsdl:input message="tns:DeleteAutoScalingGroupRequestMsg" wsa:Action="urn:DeleteAutoScalingGroup"/>
+      <wsdl:output message="tns:DeleteAutoScalingGroupResponseMsg" wsa:Action="urn:DeleteAutoScalingGroup:Response"/>
+    </wsdl:operation>
+
+  </wsdl:portType>
+
+  <wsdl:binding name="AutoScalingBinding" type="tns:AutoScalingPortType">
+
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+    <wsdl:operation name="DeleteLaunchConfiguration">
+      <soap:operation soapAction="DeleteLaunchConfiguration"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="DescribeTriggers">
+      <soap:operation soapAction="DescribeTriggers"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="UpdateAutoScalingGroup">
+      <soap:operation soapAction="UpdateAutoScalingGroup"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="CreateAutoScalingGroup">
+      <soap:operation soapAction="CreateAutoScalingGroup"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="DeleteTrigger">
+      <soap:operation soapAction="DeleteTrigger"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="TerminateInstanceInAutoScalingGroup">
+      <soap:operation soapAction="TerminateInstanceInAutoScalingGroup"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="CreateOrUpdateScalingTrigger">
+      <soap:operation soapAction="CreateOrUpdateScalingTrigger"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="DescribeAutoScalingGroups">
+      <soap:operation soapAction="DescribeAutoScalingGroups"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="CreateLaunchConfiguration">
+      <soap:operation soapAction="CreateLaunchConfiguration"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="DescribeLaunchConfigurations">
+      <soap:operation soapAction="DescribeLaunchConfigurations"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="DescribeScalingActivities">
+      <soap:operation soapAction="DescribeScalingActivities"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="SetDesiredCapacity">
+      <soap:operation soapAction="SetDesiredCapacity"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="DeleteAutoScalingGroup">
+      <soap:operation soapAction="DeleteAutoScalingGroup"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+
+  </wsdl:binding>
+
+  <wsdl:service name="AutoScaling">
+    <wsdl:port name="AutoScalingPort" binding="tns:AutoScalingBinding">
+      <soap:address location="https://autoscaling.amazonaws.com"/>
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>

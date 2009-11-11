@@ -1,0 +1,46 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/AS'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# $Id$
+# List all launch configurations.
+# If a pattern is supplied, it is used to filter the output.
+
+if ARGV[0] == '-?'
+  puts "usage: list-launch-configs [pattern]"
+  exit 1
+end
+
+if ARGV.size > 0 then
+  filter=Regexp.new(ARGV[0])
+else
+  filter=Regexp.new('.*')
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+as = AwsContext.instance.as(*config.keys)
+begin
+  configs = as.describe_launch_configurations
+  configs.each do |config|
+    if config.launch_configuration_name =~ filter or config.image_id =~ filter or config.instance_type =~ filter
+      puts "#{config.launch_configuration_name} #{config.image_id} #{config.instance_type}"
+      puts "    groups #{config.security_groups.join(',')}" if !config.security_groups.nil? and config.security_groups.size > 0
+      puts "    balancers #{config.load_balancer_names.join(',')}" if !config.load_balancer_names.nil? and config.load_balancer_names.size > 0
+      unless config.block_device_mappings.nil?
+        config.block_device_mappings.each do |m|
+          puts "    device #{m.virtual_name} #{m.device_name}"
+        end
+      end
+    end
+  end
+rescue
+  puts "error #{$!}"
+  exit 1
+end

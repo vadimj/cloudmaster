@@ -1,0 +1,26 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/ELB'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+if ARGV[0] == '-?' || ARGV.size < 1 then
+   puts "usage: delete-load-balancer name"
+   exit 1
+end
+name = ARGV[0]
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+elb = AwsContext.instance.elb(*config.keys)
+begin
+  elb.delete_load_balancer(name)
+  puts "deleted #{name}"
+rescue
+  puts "error #{$!} #{name}"
+  exit 1
+end

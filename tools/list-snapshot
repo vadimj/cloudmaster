@@ -1,0 +1,30 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/EC2'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+#  Display information about the given snapshot.
+
+if ARGV[0] == '-?' || ARGV.size < 1 then
+  puts "usage: list-snapshot snapshot-id [attribute]"
+  exit 1
+end
+snapshot_id = ARGV[0]
+if ARGV.size >= 2 then attr=ARGV[1] else attr='createVolumePermission' end
+
+Signal.trap("INT") do
+    exit 2
+end
+
+config = BasicConfiguration.new
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+    res = ec2.describe_snapshot_attribute(snapshot_id, attr)
+    pp res
+rescue
+    puts "error #{$!} #{snapshot_id}"
+    exit 1
+end
+

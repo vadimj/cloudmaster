@@ -1,0 +1,47 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/SQS'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+#  Modify the given queue attributes.
+#  For now, the only one is the visibility timeout.
+
+if ARGV[0] == '-?' || ARGV.size != 3 then
+	puts "usage: delete-queue-permissions queue account_id [action]"
+	exit 1
+end
+
+name=ARGV[0]
+account=ARGV[1]
+action=ARGV[2] || 'All'
+
+Signal.trap("INT") { exit 2 }
+
+config = BasicConfiguration.new
+AwsContext.setup((ENV['AWS_CONTEXT'].to_sym rescue :aws))
+sqs = AwsContext.instance.sqs(*config.keys)
+
+api_version = sqs.instance_variable_get(:@api_version) || SQS::API_VERSION
+if (Time.parse(api_version).to_i < Time.parse('2009-02-01').to_i)
+	puts "This requires SQS API version 2009-02-01 to function. Maybe you want AWS_CONTEXT set to 'nytd' in your environment?"
+	exit 1
+end
+
+begin
+	url = (name.match(/^http/) ? name : sqs.list_queues(name).first)
+	if url.nil? 
+		puts "queue not found: #{name}"
+	else
+		if (action.capitalize == 'All' || action == '*')
+			sqs.remove_all_account_permissions(url, account)
+		else
+			sqs.remove_account_permission(url, account, action.capitalize)
+		end
+	end
+rescue
+	puts "error #{$!} #{name}"
+	exit 1
+end
+

@@ -1,0 +1,42 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/SQS'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+#  Modify the given queue attributes.
+#  For now, the only one is the visibility timeout.
+
+if ARGV[0] == '-?' || ARGV.size != 2 then
+  puts "usage: get-queue-attribute queue key"
+  exit 1
+end
+name=ARGV[0]
+key=ARGV[1]
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+AwsContext.setup(ENV['AWS_CONTEXT'].to_sym || :aws)
+sqs = AwsContext.instance.sqs(*config.keys)
+
+begin
+  url = (name.match(/^http/) ? name : sqs.list_queues(name).first)
+  if url.nil? 
+    puts "queue not found: #{name}"
+  else  
+    list = sqs.get_queue_attributes(url, key)
+	if (!list.nil? ) 
+	    pp list
+	else
+		puts "No attributes found."
+    end
+  end
+rescue
+  puts "error #{$!} #{name}"
+  exit 1
+end
+

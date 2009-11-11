@@ -1,0 +1,45 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'NYTdAWS/SQS'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+#  Modify the given queue attributes.
+#  For now, the only one is the visibility timeout.
+
+if ARGV[0] == '-?' || ARGV.size != 1 then
+	puts "usage: get-queue-attributes queue"
+	exit 1
+end
+
+name=ARGV[0]
+
+Signal.trap("INT") { exit 2 }
+
+config = BasicConfiguration.new
+AwsContext.setup((ENV['AWS_CONTEXT'].to_sym rescue :aws))
+sqs = AwsContext.instance.sqs(*config.keys)
+
+begin
+	url = (name.match(/^http/) ? name : sqs.list_queues(name).first)
+	if url.nil? 
+		puts "queue not found: #{name}"
+	else  
+		list = sqs.get_queue_attributes(url)
+		if (! list.empty?) 
+			max_key_length = list.keys.map { |k| k.length }.max
+			list.sort.each do |k,v|
+				if (k != 'Policy')
+					printf("%-#{max_key_length}s : %s\n", k, v)
+				end
+			end
+		else
+			puts "No attributes found."
+	    end
+	end
+rescue
+	puts "error #{$!} #{name}"
+	exit 1
+end
+

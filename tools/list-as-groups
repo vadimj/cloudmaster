@@ -1,0 +1,45 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/AS'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# $Id$
+# List all autoscaling groups
+# If a pattern is supplied, it is used to filter the output.
+
+if ARGV[0] == '-?'
+  puts "usage: list-as-groups [pattern]"
+  exit 1
+end
+
+if ARGV.size > 0 then
+  filter=Regexp.new(ARGV[0])
+else
+  filter=Regexp.new('.*')
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+as = AwsContext.instance.as(*config.keys)
+begin
+  groups = as.describe_auto_scaling_groups
+  groups.each do |group|
+    if group.auto_scaling_group_name =~ filter
+      puts "#{group.auto_scaling_group_name} #{group.launch_configuration_name} #{group.availability_zones.join(',')} min:#{group.min_size} max:#{group.max_size} des:#{group.desired_capacity}"
+      puts "    balancers #{group.load_balancer_names.join(',')}" unless group.load_balancer_names.nil?
+      unless group.instances.nil?
+        group.instances.each do |i|
+          puts "    instance #{i.instance_id} #{i.lifecycle_state}"
+        end
+      end
+    end
+  end
+rescue
+  puts "error #{$!}"
+  exit 1
+end
