@@ -23,6 +23,12 @@ module AwsInflector
       end
         Object.module_eval("::#{$1}", __FILE__, __LINE__)
     end
+    def parserize(klass_name)
+        klass_name+'Parser'
+    end
+    def deparserize(parser_name)
+        parser_name.gsub('Parser','')
+    end
   end
   
   module InstanceMethods

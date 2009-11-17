@@ -12,7 +12,7 @@ class AwsObject
     new(elem)
   end
   def self.parse_xml xml_doc
-    object_name = self.name.gsub('Parser','')
+    object_name = deparserize(self.name)
     member_element = @xml_member_element || "//#{object_name}s/member"
     objects = []
     xml_doc.elements.each(member_element) do |elem|
@@ -75,7 +75,9 @@ module AwsObjectBuilder
           # skip nil values
           unless value.nil?
             # the class of the variable
-            klass = field_classes[key]            
+            klass = field_classes[key]
+            # the parser for the variable
+            parser = self.class.parserize(klass) unless klass.nil?
             if fields.include? key
               # if the class is defined - construct an object from the value
               value = self.class.constantize(klass).new(value) unless klass.nil?
@@ -85,7 +87,7 @@ module AwsObjectBuilder
                 ar = []                
                 value.each do |v|
                   # if the class is defined - construct an object from the value
-                  v = self.class.constantize(klass).new(v) unless klass.nil?
+                  v = self.class.constantize(parser).new(v) unless parser.nil?
                   ar << v                  
                 end
                 instance_variable_set("@#{key}", ar) if ar.size > 0
@@ -100,7 +102,9 @@ module AwsObjectBuilder
           el = options.elements[self.class.camelize(f.to_s)]
           unless el.nil?
             klass = field_classes[f]
-            value = klass.nil? ? el.text : self.class.constantize(klass).new(el)
+            # the parser for the variable
+            parser = self.class.parserize(klass) unless klass.nil?
+            value = klass.nil? ? el.text : self.class.constantize(parser).new(el)
             instance_variable_set("@#{f}", value) unless value.nil?
           end
         end
@@ -109,7 +113,9 @@ module AwsObjectBuilder
           el_name = self.class.camelize(f.to_s)+'/member'
           options.elements.each(el_name) do |el|
             klass = field_classes[f]
-            value = klass.nil? ? el.text : self.class.constantize(klass).new(el)
+            # the parser for the variable
+            parser = self.class.parserize(klass) unless klass.nil?
+            value = klass.nil? ? el.text : self.class.constantize(parser).new(el)
             ar << value unless value.nil?
           end
           instance_variable_set("@#{f}", ar) if ar.size > 0
@@ -154,6 +160,12 @@ module AwsObjectBuilder
       result.delete_if{ |key, value| value.nil? or (value.is_a? Array and value.size == 0) }
       return result
     end
+  end
+
+  def to_hash
+    attributes = Hash.new
+    self.instance_variables.each {|x| attributes[x[1..-1]] = self.instance_variable_get(x) }
+    return attributes
   end
   
 end

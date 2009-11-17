@@ -24,7 +24,7 @@ module AwsApiActions
     def aws_object(*args)
       args.each do |arg|
         klass = camelize(arg.to_s)
-        parser = camelize(arg.to_s)+'Parser'
+        parser = parserize(klass)
         create_parser = 'Create'+camelize(arg.to_s)+'ResultParser'
         delete_parser = 'Delete'+camelize(arg.to_s)+'ResultParser'
         define_method("create_#{arg}") do |options|
