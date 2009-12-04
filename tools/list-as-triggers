@@ -1,0 +1,38 @@
+#!/usr/bin/ruby
+# $Id$
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/AS'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+if ARGV[0] == '-?' || ARGV.size < 1 then
+  puts "usage: list-as-triggers group-name"
+  exit 1
+end
+options = {}
+options[:auto_scaling_group_name]=ARGV[0]
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+as = AwsContext.instance.as(*config.keys)
+begin
+  triggers = as.describe_triggers(options)
+  triggers.each do |t|
+      puts "trigger #{t.trigger_name} #{t.statistic} #{t.measure_name} in #{t.unit} every #{t.period} seconds"
+      puts "    duration #{t.breach_duration}"
+      puts "    lower #{t.lower_threshold} increment #{t.lower_breach_scale_increment}"
+      puts "    upper #{t.upper_threshold} increment #{t.upper_breach_scale_increment}"
+      unless t.dimensions.nil?
+        t.dimension.each do |d|
+          puts "    dimension #{d.name} #{d.value}"
+        end
+      end
+  end
+rescue
+  puts "error #{$!}"
+  exit 1
+end
