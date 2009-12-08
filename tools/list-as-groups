@@ -27,7 +27,7 @@ end
 config = BasicConfiguration.new
 as = AwsContext.instance.as(*config.keys)
 begin
-  groups = as.describe_auto_scaling_groups
+  groups = as.describe_auto_scaling_groups({})
   groups.each do |group|
     if group.auto_scaling_group_name =~ filter
       puts "#{group.auto_scaling_group_name} #{group.launch_configuration_name} #{group.availability_zones.join(',')} min:#{group.min_size} max:#{group.max_size} des:#{group.desired_capacity}"
@@ -35,6 +35,14 @@ begin
       unless group.instances.nil?
         group.instances.each do |i|
           puts "    instance #{i.instance_id} #{i.lifecycle_state}"
+        end
+      end
+      options = {}
+      options[:auto_scaling_group_name]=group.auto_scaling_group_name
+      triggers = as.describe_triggers(options)
+      unless triggers.nil?
+        triggers.each do |t|
+          puts "    trigger #{t.trigger_name} #{t.statistic} #{t.measure_name}"
         end
       end
     end
