@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 $:.unshift File.join(File.dirname(__FILE__))
-require 'NYTdAWS/SQS'
+require 'AWS/SQS'
 require 'basic_configuration'
 require 'aws_context'
 require 'pp'
@@ -22,7 +22,7 @@ AwsContext.setup((ENV['AWS_CONTEXT'].to_sym rescue :aws))
 sqs = AwsContext.instance.sqs(*config.keys)
 
 begin
-	url = (name.match(/^http/) ? name : sqs.list_queues(name).first)
+	url = (name.match(/^http/) ? name : sqs.get_queue_url(name))
 	if url.nil? 
 		puts "queue not found: #{name}"
 	else  

@@ -20,11 +20,11 @@ Signal.trap("INT") do
 end
 
 config = BasicConfiguration.new
-AwsContext.setup(ENV['AWS_CONTEXT'].to_sym || :aws)
+AwsContext.setup((ENV['AWS_CONTEXT'].to_sym rescue :aws))
 sqs = AwsContext.instance.sqs(*config.keys)
 
 begin
-  url = (name.match(/^http/) ? name : sqs.list_queues(name).first)
+  url = (name.match(/^http/) ? name : sqs.get_queue_url(name))
   if url.nil? 
     puts "queue not found: #{name}"
   else  

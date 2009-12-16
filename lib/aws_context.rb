@@ -1,4 +1,4 @@
-
+require 'AWS/AWS'
 require 'AWS/SQS'
 require 'AWS/EC2'
 require 'AWS/S3'
@@ -33,7 +33,7 @@ end
 # Every time we create one, we reset the interfaces by forcing the
 # creation of new objects.
 # This is treated as a global.  It is initialized by calling "AwsContext.setup"
-# and then anyone can get a copy by calling "AwsContext.instance".  
+# and then anyone can get a copy by calling "AwsContext.instance".
 class AwsContext
   private_class_method :new
   @@instance = nil
@@ -46,13 +46,13 @@ class AwsContext
 
   # Create a AwsContext.
   #
-  # The context here can be one of 
+  # The context here can be one of
   #  * :aws -- use the standard AWS interface
   #  * :safe -- use the SafeAWS interface
   #  * :retry -- use the RetryAWS interface
   #  * :mock -- use the MockAWS interface
   #
-  # The interface is established the first time you use it.  The 
+  # The interface is established the first time you use it.  The
   # returned interface is retained, and used for subsequent requests.
   # Thus only one instance of each interface is created.
   def AwsContext.setup(context, logger = nil)
@@ -152,25 +152,25 @@ class AwsContext
 
   public
 
-  # Return an EC2 interface.  Create on if needed.
+  # Return an EC2 interface.  Create one if needed.
   # Note that the parameters (if given) are only used if the interface is created.
   def ec2(*params)
     @ec2 || create_ec2(*params)
   end
 
-  # Return an SQS interface.  Create on if needed.
+  # Return an SQS interface.  Create one if needed.
   # Note that the parameters (if given) are only used if the interface is created.
   def sqs(*params)
     @sqs || create_sqs(*params)
   end
 
-  # Return a S3 interface.  Create on if needed.
+  # Return a S3 interface.  Create one if needed.
   # Note that the parameters (if given) are only used if the interface is created.
   def s3(*params)
     @s3 || create_s3(*params)
   end
 
-  # Return a SimpleDB interface.  Create on if needed.
+  # Return a SimpleDB interface.  Create one if needed.
   # Note that the parameters (if given) are only used if the interface is created.
   def sdb(*params)
     @sdb || create_sdb(*params)

@@ -22,14 +22,8 @@ config = BasicConfiguration.new
 AwsContext.setup((ENV['AWS_CONTEXT'].to_sym rescue :aws))
 sqs = AwsContext.instance.sqs(*config.keys)
 
-api_version = sqs.instance_variable_get(:@api_version) || SQS::API_VERSION
-if (Time.parse(api_version).to_i < Time.parse('2009-02-01').to_i)
-	puts "This requires SQS API version 2009-02-01 to function. Maybe you want AWS_CONTEXT set to 'nytd' in your environment?"
-	exit 1
-end
-
 begin
-	url = (name.match(/^http/) ? name : sqs.list_queues(name).first)
+	url = (name.match(/^http/) ? name : sqs.get_queue_url(name))
 	if url.nil? 
 		puts "queue not found: #{name}"
 	else

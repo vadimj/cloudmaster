@@ -85,11 +85,11 @@ module AWS
 
       # Add the HTTP status code and message to a descriptive message
       message = "HTTP Error: #{@response.code} - #{@response.message}"
-      
+
       # If an AWS error message is available, add its code and message
       # to the overall descriptive message
-      if @response.body and 
-        @response.body.respond_to?(:index) 
+      if @response.body and
+        @response.body.respond_to?(:index)
         @aws_error_xml = REXML::Document.new(@response.body)
 
         aws_error_code = @aws_error_xml.elements['//Code'].text
@@ -185,9 +185,7 @@ module AWS
 
     # Generate request description and signature, and add to the request
     # as the parameter 'Signature'
-    req_desc = parameters.sort {|x,y| x[0].downcase <=> y[0].downcase}.to_s
-    signature = generate_signature(req_desc)
-    parameters['Signature'] = signature
+	parameters['Signature'] = signParameters(parameters, @aws_secret_key, uri)
 
     case method
     when 'GET'
@@ -201,7 +199,7 @@ module AWS
       # Create POST request with parameters in form data
       req = Net::HTTP::Post.new(uri.request_uri)
       req.set_form_data(parameters)
-      req.set_content_type('application/x-www-form-urlencoded', 
+      req.set_content_type('application/x-www-form-urlencoded',
         {'charset', 'utf-8'})
     else
       raise "Invalid HTTP Query method: #{method}"
