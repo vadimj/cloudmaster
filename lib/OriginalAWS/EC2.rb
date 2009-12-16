@@ -14,7 +14,7 @@ class EC2
 
   ENDPOINT_URI = URI.parse("https://ec2.amazonaws.com/")
   API_VERSION = '2009-08-15'
-  SIGNATURE_VERSION = '1'
+  SIGNATURE_VERSION = '2'
 
   HTTP_METHOD = 'POST' # 'GET'
 

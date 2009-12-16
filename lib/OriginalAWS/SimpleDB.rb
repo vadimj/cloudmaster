@@ -14,7 +14,7 @@ class SimpleDB
 
   ENDPOINT_URI = URI.parse("https://sdb.amazonaws.com/")
   API_VERSION = '2007-11-07'
-  SIGNATURE_VERSION = '1'
+  SIGNATURE_VERSION = '2'
 
   HTTP_METHOD = 'POST' # 'GET'
 

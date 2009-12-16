@@ -19,7 +19,7 @@ module AwsApiActions
   
   module ClassMethods
     API_VERSION = '2009-05-15'
-    SIGNATURE_VERSION = '1'
+    SIGNATURE_VERSION = '2'
     HTTP_METHOD = 'POST' # 'GET' #
     def aws_object(*args)
       args.each do |arg|

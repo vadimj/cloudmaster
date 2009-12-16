@@ -103,27 +103,83 @@ module AWS
     end
 
   end
+  
+    #
+    # Computes RFC 2104-compliant HMAC signature for request parameters
+    # Implements AWS Signature, as per following spec:
+    #
+    # If Signature Version is 0, it signs concatenated Action and Timestamp
+    #
+    # If Signature Version is 1, it performs the following:
+    #
+    # Sorts all  parameters (including SignatureVersion and excluding Signature,
+    # the value of which is being created), ignoring case.
+    #
+    # Iterate over the sorted list and append the parameter name (in original case)
+    # and then its value. It will not URL-encode the parameter values before
+    # constructing this string. There are no separators.
+    #
+    def signParameters(parameters, key, uri = nil, algorithm = :HmacSHA1 )
+        data = ""
+        signatureVersion = parameters['SignatureVersion']
 
+        case signatureVersion.to_i
+      when 0:
+        data = calculateStringToSignV0(parameters)
+      when 1:
+        data = calculateStringToSignV1(parameters)
+      when 2:
+        algorithm = parameters['SignatureMethod'] if parameters['SignatureMethod']
+        parameters['SignatureMethod'] = algorithm.to_s
+        data = calculateStringToSignV2(parameters, uri.is_a?(URI) ? uri : URI.parse(uri))
+      else
+        raise "Invalid Signature Version specified"
+        end
 
-  # Generates an AWS signature value for the given request description.
-  # The result value is a HMAC signature that is cryptographically signed
-  # with the SHA1 algorithm using your AWS Secret Key credential. The
-  # signature value is Base64 encoded before being returned.
-  #
-  # This method can be used to sign requests destined for the REST or
-  # Query AWS API interfaces.
-  def generate_signature(request_description, digest='sha1')
-    raise "aws_access_key is not set" if not @aws_access_key
-    raise "aws_secret_key is not set" if not @aws_secret_key
+        sign(data, key, algorithm)
+    end
 
-    digest_generator = OpenSSL::Digest::Digest.new(digest)
-    digest = OpenSSL::HMAC.digest(digest_generator,
-                                  @aws_secret_key,
-                                  request_description)
-    b64_sig = encode_base64(digest)
-    return b64_sig
-  end
+    def calculateStringToSignV0(parameters)
+        parameters['Action']+parameters['Timestamp']
+    end
 
+    def calculateStringToSignV1(parameters)
+        parameters.sort {|x,y| x[0].downcase <=> y[0].downcase}.to_s
+    end
+
+    def calculateStringToSignV2(parameters, endpoint)
+        data = "POST\n"
+        data << endpoint.host.downcase + "\n"
+        data << endpoint.request_uri + "\n"
+
+    # Sort, and encode parameters into a canonical string.
+    sorted_params = parameters.sort {|x,y| x[0] <=> y[0]}
+    encoded_params = sorted_params.collect do |p|
+      encoded = (CGI::escape(p[0].to_s) + "=" + CGI::escape(p[1].to_s))
+      # Ensure spaces are encoded as '%20', not '+'
+      encoded.gsub('+', '%20')
+    end
+    data << encoded_params.join("&")
+
+        return data
+    end
+
+    #
+    # Computes RFC 2104-compliant HMAC signature.
+    #
+    def sign(data, key, algorithm)
+    case algorithm
+      when :HmacSHA1
+        digest_generator = OpenSSL::Digest::Digest.new('sha1')
+      when :HmacSHA256
+        digest_generator = OpenSSL::Digest::Digest.new('sha256')
+      else
+        raise "Non-supported signing method specified"
+        end
+
+        digest = OpenSSL::HMAC.digest(digest_generator, key, data)
+        encode_base64(digest)
+    end
 
   # Converts a minimal set of parameters destined for an AWS Query API
   # interface into a complete set necessary for invoking an AWS operation.
@@ -185,7 +241,7 @@ module AWS
 
     # Generate request description and signature, and add to the request
     # as the parameter 'Signature'
-	parameters['Signature'] = signParameters(parameters, @aws_secret_key, uri)
+  parameters['Signature'] = signParameters(parameters, @aws_secret_key, uri)
 
     case method
     when 'GET'
@@ -467,7 +523,7 @@ module AWS
   def encode_base64(data)
     return nil if not data
     b64 = Base64.encode64(data)
-  	cleaned = b64.gsub("\n","")
+    cleaned = b64.gsub("\n","")
     return cleaned
   end
 

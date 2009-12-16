@@ -1,4 +1,4 @@
-require 'AWS/AWS'
+
 require 'AWS/SQS'
 require 'AWS/EC2'
 require 'AWS/S3'
