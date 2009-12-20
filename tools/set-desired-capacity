@@ -1,0 +1,42 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/AS'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+if ARGV[0] == '-?' || ARGV.size < 2 then
+   puts "usage: set-desired-capacity as-group-name desired-capacity"
+   exit 1
+end
+options = {}
+options[:auto_scaling_group_name] = ARGV[0]
+options[:desired_capacity] = ARGV[1]
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+as = AwsContext.instance.as(*config.keys)
+
+# verifying group
+begin
+   asgs = as.describe_auto_scaling_groups({})
+   asg_names = asgs.collect{ |asg| asg.auto_scaling_group_name }
+   unless asg_names.include? options[:auto_scaling_group_name]
+      puts "Error: #{options[:auto_scaling_group_name]} is not a valid auto scaling group"
+      exit 1         
+   end
+rescue
+   puts "Error retrieving list of auto scaling groups: #{$!}"
+   exit 1
+end
+
+begin
+    result = as.create_desired_capacity(options)
+    puts "set desired-capacity for #{options[:auto_scaling_group_name]} to #{options[:desired_capacity]}"
+rescue
+    puts "error #{$!}"
+    exit 1
+end

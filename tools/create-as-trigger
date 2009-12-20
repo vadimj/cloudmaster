@@ -89,10 +89,10 @@ rescue
    exit 1
 end
 
-#begin
+begin
     result = as.create_trigger(options)
     puts "created auto scaling trigger #{options[:trigger_name]}"
-#rescue
-#    puts "Error: #{$!}"
-#    exit 1
-#end
+rescue
+    puts "error #{$!}"
+    exit 1
+end

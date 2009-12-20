@@ -99,8 +99,16 @@ class ScalingActivityParser < AsObject
   field :status_message
 end
 
+class DesiredCapacityParser < AsObject
+  include AwsObjectBuilder
+  @create_operation = 'SetDesiredCapacity'
+
+  field :auto_scaling_group_name
+  field :desired_capacity
+end
+
 class AS
   include AwsApiActions
   
-  aws_object :launch_configuration, :auto_scaling_group, :trigger, :scaling_activity
+  aws_object :launch_configuration, :auto_scaling_group, :trigger, :scaling_activity, :desired_capacity
 end
