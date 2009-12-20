@@ -92,8 +92,12 @@ module AWS
         @response.body.respond_to?(:index)
         @aws_error_xml = REXML::Document.new(@response.body)
 
-        aws_error_code = @aws_error_xml.elements['//Code'].text
-        aws_error_message = @aws_error_xml.elements['//Message'].text
+        begin
+            aws_error_code = @aws_error_xml.elements['//Code'].text
+            aws_error_message = @aws_error_xml.elements['//Message'].text
+        rescue
+            message += ", Failed to parse response: #{$!}"
+        end
 
         message += ", AWS Error: #{aws_error_code} - #{aws_error_message}"
       end

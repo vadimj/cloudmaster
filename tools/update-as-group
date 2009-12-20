@@ -6,7 +6,7 @@ require 'aws_context'
 require 'pp'
 
 if ARGV[0] == '-?' || ARGV.size < 5 then
-   puts "usage: update-as-group group-name launch-config zone1[,zone2[,zone3...]] cooldown min_size [max_size]"
+   puts "usage: update-as-group group-name launch-config zone1[,zone2[,zone3...]] cooldown-sec min_size [max_size]"
    exit 1
 end
 options = {}

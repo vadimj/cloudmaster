@@ -5,8 +5,8 @@ require 'basic_configuration'
 require 'aws_context'
 require 'pp'
 
-if ARGV[0] == '-?' || ARGV.size < 5 then
-   puts "usage: create-as-group group-name launch-config load-balancer-1[,load-balancer-2[,...]] zone min_size [max_size]"
+if ARGV[0] == '-?' || ARGV.size < 6 then
+   puts "usage: create-as-group group-name launch-config load-balancer-1[,load-balancer-2[,...]] zone1[,zone2[,zone3...]] cooldown-sec min_size [max_size]"
    exit 1
 end
 options = {}
@@ -23,8 +23,9 @@ ARGV[3].split(',').each do |zone|
     options[:availability_zones] << zone
 end
 
-options[:min_size] = ARGV[4]
-options[:max_size] = ARGV[5] || options[:min_size]
+options[:cooldown] = ARGV[4]
+options[:min_size] = ARGV[5]
+options[:max_size] = ARGV[6] || options[:min_size]
 
 Signal.trap("INT") do
   exit 2
@@ -36,7 +37,7 @@ elb = AwsContext.instance.elb(*config.keys)
 
 # verifying launch configuration
 begin
-   lcs = as.describe_launch_configurations
+   lcs = as.describe_launch_configurations({})
    lc_names = lcs.collect{ |lc| lc.launch_configuration_name }
    unless lc_names.include? options[:launch_configuration_name]
       puts "error #{options[:launch_configuration_name]} is not a valid launch configuration"
@@ -49,7 +50,7 @@ end
 
 # verifying load balancers
 begin
-   lbs = elb.describe_load_balancers
+   lbs = elb.describe_load_balancers({})
    lb_names = lbs.collect{ |lb| lb.load_balancer_name }
    options[:load_balancer_names].each do |lb_name|
       unless lb_names.include? lb_name

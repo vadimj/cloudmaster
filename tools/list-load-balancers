@@ -26,8 +26,9 @@ end
 
 config = BasicConfiguration.new
 elb = AwsContext.instance.elb(*config.keys)
+
 begin
-  balancers = elb.describe_load_balancers
+  balancers = elb.describe_load_balancers({})
   balancers.each do |balancer|
     if balancer.load_balancer_name =~ filter or balancer.d_n_s_name =~ filter
       puts "#{balancer.load_balancer_name} #{balancer.d_n_s_name}"

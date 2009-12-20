@@ -90,12 +90,18 @@ module AwsApiActions
 
           self.class.constantize(parser).parse_xml xml_doc
         end
-        define_method("delete_#{arg}") do |name|
+        define_method("delete_#{arg}") do |options|
           endpoint_uri = self.class.constantize(parser).endpoint_uri
           ps = {
             'Action' => "Delete#{klass}",
-            "#{klass}Name" => name,
           }
+
+          if options.is_a? String
+            ps["#{klass}Name"] = options
+          else
+            object = self.class.constantize(parser).new(options)
+            ps.merge!(object.to_parameters) unless object.nil?
+          end
 
           parameters = build_query_params(API_VERSION, SIGNATURE_VERSION, ps)
           response = do_query(HTTP_METHOD, endpoint_uri, parameters)
