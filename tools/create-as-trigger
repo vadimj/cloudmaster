@@ -1,0 +1,98 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/AS'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+valid_statistic = "Minimum|Maximum|Sum|Average"
+valid_measure_name = "CPUUtilization|NetworkIn|NetworkOut|DiskWriteOps|DiskReadBytes|DiskReadOps|DiskWriteBytes"
+valid_unit = "Seconds|Percent|Bytes|Bits|Count|BytesPerSecond|BitsPerSecond|CountPerSecond|None"
+
+if ARGV[0] == '-?' || ARGV.size < 7 then
+   puts "usage: create-as-trigger trigger-name as-group-name #{valid_statistic} #{valid_measure_name} #{valid_unit} l-threshold:[-]l-increment[%] u-threshold:[-]u-increment[%] [period-min [duration-min]]"
+   exit 1
+end
+options = {}
+options[:trigger_name] = ARGV[0]
+options[:auto_scaling_group_name] = ARGV[1]
+options[:statistic] = ARGV[2]
+options[:measure_name] = ARGV[3]
+options[:unit] = ARGV[4]
+lower = ARGV[5].split(':')
+options[:lower_threshold] = lower[0]
+options[:lower_breach_scale_increment] = lower[1]
+upper = ARGV[6].split(':')
+options[:upper_threshold] = upper[0]
+options[:upper_breach_scale_increment] = upper[1]
+options[:dimensions] = [
+    {
+        :name => 'AutoScalingGroupName',
+        :value => options[:auto_scaling_group_name]
+    }
+]
+
+unless options[:statistic] =~ Regexp.new("[#{valid_statistic}]")
+    puts "Error: #{options[:statistic]} must be one of #{valid_statistic}"
+    exit 1
+end
+
+unless options[:measure_name] =~ Regexp.new("[#{valid_measure_name}]")
+    puts "Error: #{options[:measure_name]} must be one of #{valid_measure_name}"
+    exit 1
+end
+
+unless options[:unit] =~ Regexp.new("[#{valid_unit}]")
+    puts "Error: #{options[:unit]} must be one of #{valid_unit}"
+    exit 1
+end
+
+if ARGV[7].nil?
+    options[:period] = 60
+else
+    begin
+        options[:period] = ARGV[7]*60 
+    rescue
+        puts "Failed to calculate period for value #{ARGV[7]} - not a valid number?: #{$!}"
+        exit 1
+    end
+end
+
+if ARGV[8].nil?
+    options[:breach_duration] = options[:period]*5
+else
+    begin
+        options[:breach_duration] = ARGV[8]*60
+    rescue
+        puts "Failed to calculate breach_duration for value #{ARGV[8]} - not a valid number?: #{$!}"
+        exit 1
+    end
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+as = AwsContext.instance.as(*config.keys)
+
+# verifying group
+begin
+   asgs = as.describe_auto_scaling_groups({})
+   asg_names = asgs.collect{ |asg| asg.auto_scaling_group_name }
+   unless asg_names.include? options[:auto_scaling_group_name]
+      puts "Error: #{options[:auto_scaling_group_name]} is not a valid auto scaling group"
+      exit 1         
+   end
+rescue
+   puts "Error retrieving list of auto scaling groups: #{$!}"
+   exit 1
+end
+
+begin
+    result = as.create_trigger(options)
+    puts "created auto scaling trigger #{options[:trigger_name]}"
+rescue
+    puts "Error: #{$!}"
+    exit 1
+end

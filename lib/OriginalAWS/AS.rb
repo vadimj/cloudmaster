@@ -53,6 +53,7 @@ end
 
 class TriggerParser < AsObject
   include AwsObjectBuilder
+  @create_operation = 'CreateOrUpdateScalingTrigger'
   
   field :trigger_name
   field :auto_scaling_group_name

@@ -27,7 +27,7 @@ end
 config = BasicConfiguration.new
 as = AwsContext.instance.as(*config.keys)
 begin
-  configs = as.describe_launch_configurations
+  configs = as.describe_launch_configurations({})
   configs.each do |config|
     if config.launch_configuration_name =~ filter or config.image_id =~ filter or config.instance_type =~ filter
       puts "#{config.launch_configuration_name} #{config.image_id} #{config.instance_type}"

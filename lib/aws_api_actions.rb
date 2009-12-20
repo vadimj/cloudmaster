@@ -29,11 +29,12 @@ module AwsApiActions
         delete_parser = 'Delete'+camelize(arg.to_s)+'ResultParser'
         define_method("create_#{arg}") do |options|
           endpoint_uri = self.class.constantize(parser).endpoint_uri
-          ps = {
-            'Action' => "Create#{klass}",
-          }
-
           object = self.class.constantize(parser).new(options)
+          action = object.create_operation || "Create#{klass}" 
+
+          ps = {
+            'Action' => action,
+          }
           ps.merge!(object.to_parameters) unless object.nil?
 
           parameters = build_query_params(API_VERSION, SIGNATURE_VERSION, ps)
