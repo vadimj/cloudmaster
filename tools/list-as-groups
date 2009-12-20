@@ -30,19 +30,19 @@ begin
   groups = as.describe_auto_scaling_groups({})
   groups.each do |group|
     if group.auto_scaling_group_name =~ filter
-      puts "#{group.auto_scaling_group_name} #{group.launch_configuration_name} #{group.availability_zones.join(',')} min:#{group.min_size} max:#{group.max_size} des:#{group.desired_capacity}"
-      puts "    balancers #{group.load_balancer_names.join(',')}" unless group.load_balancer_names.nil?
-      unless group.instances.nil?
-        group.instances.each do |i|
-          puts "    instance #{i.instance_id} #{i.lifecycle_state}"
-        end
-      end
+      puts "#{group.auto_scaling_group_name} configuration:#{group.launch_configuration_name} zones:#{group.availability_zones.join(',')} min:#{group.min_size} max:#{group.max_size} desired:#{group.desired_capacity} cooldown:#{group.cooldown}s"
       options = {}
       options[:auto_scaling_group_name]=group.auto_scaling_group_name
       triggers = as.describe_triggers(options)
       unless triggers.nil?
         triggers.each do |t|
-          puts "    trigger #{t.trigger_name} #{t.statistic} #{t.measure_name}"
+          puts "    trigger #{t.trigger_name} #{t.statistic} #{t.measure_name} in #{t.unit} lower:#{t.lower_threshold}:#{t.lower_breach_scale_increment} upper:#{t.upper_threshold}:#{t.upper_breach_scale_increment} period:#{t.period}s duration:#{t.breach_duration}s"
+        end
+      end
+      puts "    balancers #{group.load_balancer_names.join(',')}" unless group.load_balancer_names.nil?
+      unless group.instances.nil?
+        group.instances.each do |i|
+          puts "    instance #{i.instance_id} #{i.lifecycle_state}"
         end
       end
     end

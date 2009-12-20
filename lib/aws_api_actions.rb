@@ -26,6 +26,7 @@ module AwsApiActions
         klass = camelize(arg.to_s)
         parser = parserize(klass)
         create_parser = 'Create'+camelize(arg.to_s)+'ResultParser'
+        create_parser = 'Update'+camelize(arg.to_s)+'ResultParser'
         delete_parser = 'Delete'+camelize(arg.to_s)+'ResultParser'
         define_method("create_#{arg}") do |options|
           endpoint_uri = self.class.constantize(parser).endpoint_uri
@@ -44,6 +45,28 @@ module AwsApiActions
           # try to return a result object
           begin
             result = self.class.constantize(create_parser).parse_xml(result)[0]
+          rescue
+          end
+
+          return result
+        end
+        define_method("update_#{arg}") do |options|
+          endpoint_uri = self.class.constantize(parser).endpoint_uri
+          object = self.class.constantize(parser).new(options)
+          action = object.update_operation || "Update#{klass}" 
+
+          ps = {
+            'Action' => action,
+          }
+          ps.merge!(object.to_parameters) unless object.nil?
+
+          parameters = build_query_params(API_VERSION, SIGNATURE_VERSION, ps)
+          response = do_query(HTTP_METHOD, endpoint_uri, parameters)
+          result = REXML::Document.new(response.body)
+
+          # try to return a result object
+          begin
+            result = self.class.constantize(update_parser).parse_xml(result)[0]
           rescue
           end
 
