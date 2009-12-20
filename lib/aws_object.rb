@@ -6,7 +6,7 @@ require 'uri'
 class AwsObject
   include ClassLevelInheritableAttributes
   cattr_inheritable :endpoint_uri, :xml_member_element
-  cattr_inheritable :create_operation, :update_operation
+  cattr_inheritable :create_operation, :update_operation, :describe_operation
   cattr_inheritable :fields, :multi_fields, :field_classes
 
   def self.parse_element elem
@@ -61,7 +61,7 @@ module AwsObjectBuilder
     #
     # Convenient instance methods to retrieve class variables
     #
-    [ :create_operation, :update_operation, :fields, :multi_fields, :field_classes ].each do |method|
+    [ :create_operation, :update_operation, :describe_operation, :fields, :multi_fields, :field_classes ].each do |method|
       define_method(method) do
         self.class.instance_variable_get("@#{method}")
       end

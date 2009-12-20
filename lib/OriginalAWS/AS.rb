@@ -84,8 +84,23 @@ class TriggerParser < AsObject
   #  field :custom_unit
 end
 
+class ScalingActivityParser < AsObject
+  include AwsObjectBuilder
+  @describe_operation = 'DescribeScalingActivities'
+  
+  field :activity_id
+  field :auto_scaling_group_name
+  field :cause
+  field :description
+  field :end_time
+  field :start_time
+  field :progress
+  field :status_code
+  field :status_message
+end
+
 class AS
   include AwsApiActions
   
-  aws_object :launch_configuration, :auto_scaling_group, :trigger
+  aws_object :launch_configuration, :auto_scaling_group, :trigger, :scaling_activity
 end

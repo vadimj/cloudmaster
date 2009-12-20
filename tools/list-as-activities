@@ -1,0 +1,31 @@
+#!/usr/bin/ruby
+# $Id$
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/AS'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+if ARGV[0] == '-?' || ARGV.size < 1 then
+  puts "usage: list-as-activities group-name"
+  exit 1
+end
+options = {}
+options[:auto_scaling_group_name]=ARGV[0]
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+as = AwsContext.instance.as(*config.keys)
+begin
+  activitys = as.describe_scaling_activitys(options)
+  activitys.each do |a|
+      puts "activity #{a.activity_id}"
+      pp a
+  end
+rescue
+  puts "error #{$!}"
+  exit 1
+end

@@ -73,17 +73,17 @@ module AwsApiActions
           return result
         end
         define_method("describe_#{arg}s") do |options|
+          options = {} if options.nil?
           endpoint_uri = self.class.constantize(parser).endpoint_uri
+          object = self.class.constantize(parser).new(options)
+          action = object.describe_operation || "Describe#{klass}s"
+
           ps = {
-            'Action' => "Describe#{klass}s",
+            'Action' => action,
             'MaxRecords' => 100,
           }
+          ps.merge!(object.to_parameters) unless object.nil?
           
-          unless options.nil?
-            object = self.class.constantize(parser).new(options)
-            ps.merge!(object.to_parameters) unless object.nil?
-          end
-
           parameters = build_query_params(API_VERSION, SIGNATURE_VERSION, ps)
           response = do_query(HTTP_METHOD, endpoint_uri, parameters)
           xml_doc = REXML::Document.new(response.body)
