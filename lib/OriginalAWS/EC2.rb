@@ -127,6 +127,27 @@ class EC2
     return zones
   end
 
+  def describe_regions(*names)
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'DescribeRegions',
+      },{
+      'RegionName' => names
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+
+    regions = []
+    xml_doc.elements.each('//regionInfo/item') do |elem|
+      regions << {
+        :name => elem.elements['regionName'].text,
+        :endpoint => elem.elements['regionEndpoint'].text
+      }
+    end
+    return regions
+  end
+
   def describe_keypairs(*keypair_names)
     parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
       {

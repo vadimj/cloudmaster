@@ -1,0 +1,28 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+# List all images belonging to the current account.
+
+if ARGV[0] == '-?'
+  puts "usage: list-regions"
+  exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+config = BasicConfiguration.new
+ec2 = AwsContext.instance.ec2(*config.keys)
+begin
+  regions = ec2.describe_regions
+  regions.each do |r|
+    puts "#{r[:name]} #{r[:endpoint]}"
+  end
+rescue
+  puts "error #{$!}"
+  exit 1
+end
