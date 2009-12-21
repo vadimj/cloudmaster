@@ -106,7 +106,7 @@ class EC2
     return reservations
   end
 
-  def describe_availability_zones(region)
+  def describe_availability_zones(region = nil)
     parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
       {
       'Action' => 'DescribeAvailabilityZones',
