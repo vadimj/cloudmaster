@@ -4,8 +4,6 @@ require 'basic_configuration'
 require 'aws_context'
 require 'pp'
 
-# List all images belonging to the current account.
-
 if ARGV[0] == '-?'
   puts "usage: list-regions"
   exit 1

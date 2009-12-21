@@ -106,15 +106,20 @@ class EC2
     return reservations
   end
 
-  def describe_availability_zones(*names)
+  def describe_availability_zones(region)
     parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
       {
       'Action' => 'DescribeAvailabilityZones',
-      },{
-      'ZoneName' => names
-      })
+      }
+    )
+    endpoint_uri = ENDPOINT_URI
+    unless region.nil?
+        regions = describe_regions(region)
+        endpoint = regions[0][:endpoint]
+        endpoint_uri = URI.parse("https://#{endpoint}/")
+    end
 
-    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    response = do_query(HTTP_METHOD, endpoint_uri, parameters)
     xml_doc = REXML::Document.new(response.body)
 
     zones = []
