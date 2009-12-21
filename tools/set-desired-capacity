@@ -11,7 +11,13 @@ if ARGV[0] == '-?' || ARGV.size < 2 then
 end
 options = {}
 options[:auto_scaling_group_name] = ARGV[0]
-options[:desired_capacity] = ARGV[1]
+
+if ARGV[1] =~ Regexp.new("[0-9]+")
+    options[:desired_capacity] = ARGV[1].to_i
+else
+    puts "error '#{ARGV[1]}' is not a valid integer"
+    exit 1
+end
 
 Signal.trap("INT") do
   exit 2
