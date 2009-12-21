@@ -18,6 +18,21 @@ class EC2
 
   HTTP_METHOD = 'POST' # 'GET'
 
+  def parse_reserved_instance(elem)
+    instance = {
+      :reserved_instances_id => elem.elements['reservedInstancesId'].text,
+      :instance_type => elem.elements['instanceType'].text,
+      :zone => elem.elements['availabilityZone'].text,
+      :duration => elem.elements['duration'].text,
+      :usage_price => elem.elements['usagePrice'].text,
+      :fixed_price => elem.elements['fixedPrice'].text,
+      :count => elem.elements['instanceCount'].text,
+      :description => elem.elements['productDescription'].text,
+      :state => elem.elements['state'].text,
+    }
+    return instance
+  end
+
   def parse_reservation(elem)
     reservation = {
       :reservation_id => elem.elements['reservationId'].text,
@@ -104,6 +119,24 @@ class EC2
       reservations << parse_reservation(elem)
     end
     return reservations
+  end
+
+  def describe_reserved_instances(*instance_ids)
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
+      {
+      'Action' => 'DescribeReservedInstances',
+      },{
+      'ReservedInstancesId' => instance_ids
+      })
+
+    response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
+    xml_doc = REXML::Document.new(response.body)
+
+    instances = []
+    xml_doc.elements.each('//reservedInstancesSet/item') do |elem|
+      instances << parse_reserved_instance(elem)
+    end
+    return instances
   end
 
   def describe_availability_zones(region = nil)
