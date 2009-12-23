@@ -26,7 +26,7 @@ module AwsApiActions
         klass = camelize(arg.to_s)
         parser = parserize(klass)
         create_parser = 'Create'+camelize(arg.to_s)+'ResultParser'
-        create_parser = 'Update'+camelize(arg.to_s)+'ResultParser'
+        update_parser = 'Update'+camelize(arg.to_s)+'ResultParser'
         delete_parser = 'Delete'+camelize(arg.to_s)+'ResultParser'
         define_method("create_#{arg}") do |options|
           endpoint_uri = self.class.constantize(parser).endpoint_uri
