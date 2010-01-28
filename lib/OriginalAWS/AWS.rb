@@ -531,4 +531,32 @@ module AWS
     return cleaned
   end
 
+  ####################################################################
+  #
+  # BACKWARD COMPATIBILITY ONLY
+  #
+  # This function is here to support generate_rest_signature method for S3
+  # It shouldn't be used for anything else
+  #
+  ####################################################################
+  #
+  # Generates an AWS signature value for the given request description.
+  # The result value is a HMAC signature that is cryptographically signed
+  # with the SHA1 algorithm using your AWS Secret Key credential. The
+  # signature value is Base64 encoded before being returned.
+  #
+  # This method can be used to sign requests destined for the REST or
+  # Query AWS API interfaces.
+  def generate_signature(request_description)
+    raise "aws_access_key is not set" if not @aws_access_key
+    raise "aws_secret_key is not set" if not @aws_secret_key
+
+    digest_generator = OpenSSL::Digest::Digest.new('sha1')
+    digest = OpenSSL::HMAC.digest(digest_generator,
+                                  @aws_secret_key,
+                                  request_description)
+    b64_sig = encode_base64(digest)
+    return b64_sig
+  end
+
 end
