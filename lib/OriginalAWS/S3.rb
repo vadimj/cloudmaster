@@ -435,7 +435,7 @@ class S3
     end
 
     uri = generate_s3_uri(bucket_name, object_key, [:acl=>nil])
-    do_rest('PUT', uri, xml_doc.to_s, {'Content-Type'=>'application/xml'})
+    response = do_rest('PUT', uri, xml_doc.to_s, {'Content-Type'=>'application/xml'})
     return true
   end
 
