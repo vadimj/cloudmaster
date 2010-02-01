@@ -6,13 +6,25 @@ require 'aws_context'
 require 'pp'
 
 valid_permission = "READ|WRITE|READ_ACP|WRITE_ACP|FULL_CONTROL"
-	
+
 # Add object attributes
 if ARGV[0] == '-?' || ARGV.size < 3 then
   puts "usage: make-object-available bucket (key|/) grantee [#{valid_permission}]"
   puts "default value for permission is READ"
   exit 1
 end
+
+if ARGV[0] == '-?'
+  puts "usage: list-objects [-l] [prefix [bucket]]"
+  exit 1
+end
+
+long = false
+if ARGV[0] == '-l'
+  long = true
+  ARGV.shift
+end
+
 bucket = ARGV[0]
 key = ARGV[1] == '/' ? '' : ARGV[1]
 grantee = ARGV[2]
@@ -51,17 +63,21 @@ begin
   end
   grants << { grantee => permission }
   s3.set_acl(owner_id, bucket, key, grants) unless p_exists
+  puts "granted #{permission} on #{bucket}/#{key} to #{grantee}"
 
-  # print all permissions
-  current_acl = s3.get_acl(bucket, key)
-  current_grants = current_acl[:grants]
-  current_grants.each do |hash|
-    current_grantee = hash[:grantee]
-    c_display_name = current_grantee[:display_name]
-    c_id = current_grantee[:id]
-    c_permission = hash[:permission]
-    puts "#{c_permission} #{c_display_name} #{c_id}"
+  # print all permissions if long output is requested
+  if long
+    current_acl = s3.get_acl(bucket, key)
+    current_grants = current_acl[:grants]
+    current_grants.each do |hash|
+      current_grantee = hash[:grantee]
+      c_display_name = current_grantee[:display_name]
+      c_id = current_grantee[:id]
+      c_permission = hash[:permission]
+      puts "#{c_permission} #{c_display_name} #{c_id}"
+    end
   end
+
 rescue
   puts "error granting #{permission} on #{bucket}/#{key} to #{grantee}: #{$!}"
   exit 1
