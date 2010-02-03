@@ -42,7 +42,7 @@ begin
       puts "    balancers #{group.load_balancer_names.join(',')}" unless group.load_balancer_names.nil?
       unless group.instances.nil?
         group.instances.each do |i|
-          puts "    instance #{i.instance_id} #{i.lifecycle_state}"
+          puts "    instance #{i.instance_id} #{i.lifecycle_state} #{i.availability_zone}"
         end
       end
     end

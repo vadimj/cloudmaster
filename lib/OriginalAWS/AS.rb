@@ -40,7 +40,7 @@ class AutoScalingGroupParser < AsObject
 
   multi_field :availability_zones
   multi_field :load_balancer_names
-  multi_field :instances
+  multi_field :instances, :instance
   multi_field :triggers, :trigger
 end
 
@@ -49,6 +49,14 @@ class DimensionParser < AsObject
   
   field :name
   field :value
+end
+
+class InstanceParser < AsObject
+  include AwsObjectBuilder
+
+  field :instance_id
+  field :lifecycle_state
+  field :availability_zone
 end
 
 class TriggerParser < AsObject
