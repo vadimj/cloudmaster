@@ -44,6 +44,14 @@ class AutoScalingGroupParser < AsObject
   multi_field :triggers, :trigger
 end
 
+class DesiredCapacity < AsObject
+  include AwsObjectBuilder
+  @create_operation = 'SetDesiredCapacity'
+
+  field :auto_scaling_group_name
+  field :desired_capacity
+end
+
 class DimensionParser < AsObject
   include AwsObjectBuilder
   
