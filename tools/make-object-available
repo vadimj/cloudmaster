@@ -39,10 +39,6 @@ Signal.trap("INT") do
   exit 2
 end
 
-def testme
-  puts "!!!"
-end
-
 config = BasicConfiguration.new
 s3 = AwsContext.instance.s3(*config.keys)
 begin
