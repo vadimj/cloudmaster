@@ -10,8 +10,14 @@ require 'pp'
 # If a pattern is supplied, it is used to filter the output.
 
 if ARGV[0] == '-?'
-  puts "usage: list-launch-configs [pattern]"
+  puts "usage: list-launch-configs [-l] [pattern]"
   exit 1
+end
+
+long = false
+if ARGV[0] == '-l'
+  long = true
+  ARGV.shift
 end
 
 if ARGV.size > 0 then
@@ -30,13 +36,21 @@ begin
   configs = as.describe_launch_configurations({})
   configs.each do |config|
     if config.launch_configuration_name =~ filter or config.image_id =~ filter or config.instance_type =~ filter
-      puts "#{config.launch_configuration_name} #{config.image_id} #{config.instance_type}"
+      puts "#{config.launch_configuration_name} #{config.image_id} #{config.instance_type} #{config.key_name}"
       puts "    groups #{config.security_groups.join(',')}" if !config.security_groups.nil? and config.security_groups.size > 0
       puts "    balancers #{config.load_balancer_names.join(',')}" if !config.load_balancer_names.nil? and config.load_balancer_names.size > 0
       unless config.block_device_mappings.nil?
         config.block_device_mappings.each do |m|
           puts "    device #{m.virtual_name} #{m.device_name}"
         end
+      end
+      if long
+	puts "    created #{config.created_time}"
+        puts "    kernel_id #{config.kernel_id}"
+        puts "    ramdisk_id #{config.ramdisk_id}"
+        puts "    user_data_begins --------------"
+        puts config.user_data
+        puts "    user_data_ends --------------"
       end
     end
   end
