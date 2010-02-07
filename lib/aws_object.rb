@@ -1,3 +1,4 @@
+require 'base64'
 require 'AWS'
 require 'class_level_inheritable_attributes'
 require 'aws_inflector'
@@ -7,11 +8,21 @@ class AwsObject
   include ClassLevelInheritableAttributes
   cattr_inheritable :endpoint_uri, :xml_member_element
   cattr_inheritable :create_operation, :update_operation, :describe_operation
-  cattr_inheritable :fields, :multi_fields, :field_classes
+  cattr_inheritable :fields, :multi_fields, :field_classes, :field_encoders
+
+  # Base64-encodes a string, and removes the excess newline ('\n')
+  # characters inserted by the default ruby encoder.
+  def encode_base64(data)
+    return nil if not data
+    b64 = Base64.encode64(data)
+    cleaned = b64.gsub("\n","")
+    return cleaned
+  end
 
   def self.parse_element elem
     new(elem)
   end
+
   def self.parse_xml xml_doc
     object_name = deparserize(self.name)
     member_element = @xml_member_element || "//#{object_name}s/member"
@@ -32,6 +43,7 @@ module AwsObjectBuilder
       @fields = []
       @multi_fields = []
       @field_classes = {}
+      @field_encoders = {}
     end
   end
 
@@ -41,6 +53,12 @@ module AwsObjectBuilder
       @fields << name.to_sym
       setup_field name, klass
       @fields
+    end
+    def encoder name, encoder_function
+      @field_encoders ||= {}
+      @field_encoders[name.to_sym] = encoder_function
+      field name
+      @field_encoders
     end
     def multi_field name, klass = nil
       @multi_fields ||= []
@@ -61,7 +79,7 @@ module AwsObjectBuilder
     #
     # Convenient instance methods to retrieve class variables
     #
-    [ :create_operation, :update_operation, :describe_operation, :fields, :multi_fields, :field_classes ].each do |method|
+    [ :create_operation, :update_operation, :describe_operation, :fields, :field_encoders, :multi_fields, :field_classes ].each do |method|
       define_method(method) do
         self.class.instance_variable_get("@#{method}")
       end
@@ -129,7 +147,13 @@ module AwsObjectBuilder
       
       fields.each do |f|
         klass = field_classes[f]
+        encoder = field_encoders[f]
+        
         value = instance_variable_get("@#{f}")
+        unless encoder.nil?
+          method_object = self.method(encoder)
+          value = method_object.call(value)
+        end
         unless value.nil?
           v = klass.nil? ? value : value.to_parameters
           result[self.class.camelize(f.to_s)] = v

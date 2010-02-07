@@ -21,8 +21,8 @@ class LaunchConfigurationParser < AsObject
   field :ramdisk_id
   field :kernel_id
   field :key_name
-  field :user_data
   field :created_time
+  encoder :user_data, :encode_base64
   multi_field :load_balancer_names
   multi_field :security_groups
   multi_field :block_device_mappings, :block_device_mapping
