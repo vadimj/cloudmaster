@@ -23,6 +23,15 @@ begin
   activitys = as.describe_scaling_activitys(options)
   activitys.each do |a|
       puts "activity #{a.activity_id}"
+#  field :activity_id
+#  field :auto_scaling_group_name
+#  field :cause
+#  field :description
+#  field :end_time
+#  field :start_time
+#  field :progress
+#  field :status_code
+#  field :status_message
       pp a
   end
 rescue
