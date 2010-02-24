@@ -12,7 +12,7 @@ if [ X$1 == X ]; then
     exit 1
 fi
 
-if [ X$1 == X-F ]; then
+if [ "X$1" == "X-F" ]; then
     if [ X$2 == X ]; then
         usage
         exit 1
@@ -25,6 +25,7 @@ if [ X$1 == X-F ]; then
         cat $2 | while read line; do
             $0 $line
         done
+	exit 0
     fi
 fi
 
@@ -46,7 +47,6 @@ list-my-images | grep $1 | while read line; do
     bucket=${manifest_path%/*}
     manifest=${manifest_path#*/}
     prefix=${manifest%.manifest.xml*}
-    echo $amiid $bucket $prefix
     deregister-image $amiid
     yes | delete-objects $prefix $bucket
     echo "$amiid $manifest_path: deleted"
