@@ -1,0 +1,56 @@
+#!/bin/bash
+#
+# $Id$
+#
+
+function usage {
+  echo "$0 ami-id|manifest-path|-F list-of-amis-or-manifests.txt" >&2;
+}
+
+if [ X$1 == X ]; then
+    usage
+    exit 1
+fi
+
+if [ X$1 == X-F ]; then
+    if [ X$2 == X ]; then
+        usage
+        exit 1
+    fi 
+    if [ ! -f $2 ]; then
+        echo "$2 doesn't exist" >&2;
+        exit 1
+    else
+        echo "Processing list of amis/manifests from $2" >&2;
+        cat $2 | while read line; do
+            $0 $line
+        done
+    fi
+fi
+
+count=`list-my-images | grep $1 | wc -l`
+
+if [ $count -eq 0 ]; then
+    echo "Couldn't find any images matching $1" >&2;
+    exit 0
+fi
+
+if [ $count -gt 1 ]; then
+    echo "More than one image matches $1, skipping" >&2;
+    exit 1
+fi
+
+list-my-images | grep $1 | while read line; do
+    amiid=${line% *}
+    manifest_path=${line#* }
+    bucket=${manifest_path%/*}
+    manifest=${manifest_path#*/}
+    prefix=${manifest%.manifest.xml*}
+    echo $amiid $bucket $prefix
+    deregister-image $amiid
+    yes | delete-objects $prefix $bucket
+    echo "$amiid $manifest_path: deleted"
+done
+
+exit 0
+
