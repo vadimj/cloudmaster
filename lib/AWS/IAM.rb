@@ -1,14 +1,14 @@
 $:.unshift(File.join(ENV['AWS_HOME'], "lib", "OriginalAWS"))
-require 'OriginalAWS/ELB'
+require 'OriginalAWS/IAM'
 
 module AWS
-  class ELB
+  class IAM
     def initialize(*args)
-      @elb = ::ELB.new(*args)
+      @iam = ::IAM.new(*args)
     end
 
     def method_missing(key, *args)
-      @elb.send(key, *args)
+      @iam.send(key, *args)
     end
   end
 end

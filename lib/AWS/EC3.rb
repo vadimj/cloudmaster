@@ -1,14 +1,14 @@
 $:.unshift(File.join(ENV['AWS_HOME'], "lib", "OriginalAWS"))
-require 'OriginalAWS/ELB'
+require 'OriginalAWS/EC3'
 
 module AWS
-  class ELB
+  class EC3
     def initialize(*args)
-      @elb = ::ELB.new(*args)
+      @ec3 = ::EC3.new(*args)
     end
 
     def method_missing(key, *args)
-      @elb.send(key, *args)
+      @ec3.send(key, *args)
     end
   end
 end

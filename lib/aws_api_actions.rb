@@ -21,6 +21,7 @@ module AwsApiActions
     API_VERSION = '2009-05-15'
     SIGNATURE_VERSION = '2'
     HTTP_METHOD = 'POST' # 'GET' #
+    
     def aws_object(*args)
       args.each do |arg|
         klass = camelize(arg.to_s)
@@ -30,6 +31,10 @@ module AwsApiActions
         delete_parser = 'Delete'+camelize(arg.to_s)+'ResultParser'
         define_method("create_#{arg}") do |options|
           endpoint_uri = self.class.constantize(parser).endpoint_uri
+          api_version = self.class.constantize(parser).api_version || API_VERSION
+          signature_version = self.class.constantize(parser).signature_version || SIGNATURE_VERSION
+          http_method = self.class.constantize(parser).http_method || HTTP_METHOD
+
           object = self.class.constantize(parser).new(options)
           action = object.create_operation || "Create#{klass}" 
 
@@ -38,20 +43,26 @@ module AwsApiActions
           }
           ps.merge!(object.to_parameters) unless object.nil?
 
-          parameters = build_query_params(API_VERSION, SIGNATURE_VERSION, ps)
-          response = do_query(HTTP_METHOD, endpoint_uri, parameters)
+          parameters = build_query_params(api_version, signature_version, ps)
+          response = do_query(http_method, endpoint_uri, parameters)
           result = REXML::Document.new(response.body)
+          p result.to_s
 
           # try to return a result object
           begin
             result = self.class.constantize(create_parser).parse_xml(result)[0]
           rescue
+            puts "Warning: #{$!}"
           end
 
           return result
         end
         define_method("update_#{arg}") do |options|
           endpoint_uri = self.class.constantize(parser).endpoint_uri
+          api_version = self.class.constantize(parser).api_version || API_VERSION
+          signature_version = self.class.constantize(parser).signature_version || SIGNATURE_VERSION
+          http_method = self.class.constantize(parser).http_method || HTTP_METHOD
+
           object = self.class.constantize(parser).new(options)
           action = object.update_operation || "Update#{klass}" 
 
@@ -60,8 +71,8 @@ module AwsApiActions
           }
           ps.merge!(object.to_parameters) unless object.nil?
 
-          parameters = build_query_params(API_VERSION, SIGNATURE_VERSION, ps)
-          response = do_query(HTTP_METHOD, endpoint_uri, parameters)
+          parameters = build_query_params(api_version, signature_version, ps)
+          response = do_query(http_method, endpoint_uri, parameters)
           result = REXML::Document.new(response.body)
 
           # try to return a result object
@@ -75,6 +86,10 @@ module AwsApiActions
         define_method("describe_#{arg}s") do |options|
           options = {} if options.nil?
           endpoint_uri = self.class.constantize(parser).endpoint_uri
+          api_version = self.class.constantize(parser).api_version || API_VERSION
+          signature_version = self.class.constantize(parser).signature_version || SIGNATURE_VERSION
+          http_method = self.class.constantize(parser).http_method || HTTP_METHOD
+
           object = self.class.constantize(parser).new(options)
           action = object.describe_operation || "Describe#{klass}s"
 
@@ -84,14 +99,18 @@ module AwsApiActions
           }
           ps.merge!(object.to_parameters) unless object.nil?
           
-          parameters = build_query_params(API_VERSION, SIGNATURE_VERSION, ps)
-          response = do_query(HTTP_METHOD, endpoint_uri, parameters)
+          parameters = build_query_params(api_version, signature_version, ps)
+          response = do_query(http_method, endpoint_uri, parameters)
           xml_doc = REXML::Document.new(response.body)
 
           self.class.constantize(parser).parse_xml xml_doc
         end
         define_method("delete_#{arg}") do |options|
           endpoint_uri = self.class.constantize(parser).endpoint_uri
+          api_version = self.class.constantize(parser).api_version || API_VERSION
+          signature_version = self.class.constantize(parser).signature_version || SIGNATURE_VERSION
+          http_method = self.class.constantize(parser).http_method || HTTP_METHOD
+
           ps = {
             'Action' => "Delete#{klass}",
           }
@@ -103,8 +122,8 @@ module AwsApiActions
             ps.merge!(object.to_parameters) unless object.nil?
           end
 
-          parameters = build_query_params(API_VERSION, SIGNATURE_VERSION, ps)
-          response = do_query(HTTP_METHOD, endpoint_uri, parameters)
+          parameters = build_query_params(api_version, signature_version, ps)
+          response = do_query(http_method, endpoint_uri, parameters)
           result = REXML::Document.new(response.body)
 
           # try to return a result object

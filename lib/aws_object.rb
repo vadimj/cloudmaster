@@ -6,7 +6,7 @@ require 'uri'
 
 class AwsObject
   include ClassLevelInheritableAttributes
-  cattr_inheritable :endpoint_uri, :xml_member_element
+  cattr_inheritable :endpoint_uri, :api_version, :signature_version, :http_method, :xml_member_element
   cattr_inheritable :create_operation, :update_operation, :describe_operation
   cattr_inheritable :fields, :multi_fields, :field_classes, :field_encoders
 
@@ -28,6 +28,8 @@ class AwsObject
     member_element = @xml_member_element || "//#{object_name}s/member"
     objects = []
     xml_doc.elements.each(member_element) do |elem|
+      p "***"
+      p elem.to_s
       objects << new(elem)
     end
     return objects

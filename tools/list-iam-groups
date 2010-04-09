@@ -1,0 +1,38 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/IAM'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+if ARGV[0] == '-?'
+    puts "usage: list-aim-groups [path-prefix|user-name]"
+    exit 1
+end
+
+filter = ARGV[0] || '/'
+#if ARGV.size > 0 then
+#    filter=Regexp.new(ARGV[0])
+#else
+#    filter=Regexp.new('.*')
+#end
+
+Signal.trap("INT") do
+    exit 2
+end
+
+config = BasicConfiguration.new
+iam = AwsContext.instance.iam(*config.keys)
+
+begin
+    groups = iam.describe_groups({ :path_prefix => filter })
+#    groups += iam.describe_groups({ :user_name => filter })
+    groups.each do |group|
+        puts "#{group.group_name} #{group.group_id} #{group.arn}"
+    end
+rescue
+    puts "error listing iam groups: #{$!}"
+    exit 1
+end
+
+exit 0

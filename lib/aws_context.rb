@@ -1,10 +1,10 @@
-
 require 'AWS/SQS'
 require 'AWS/EC2'
 require 'AWS/S3'
 require 'AWS/SimpleDB'
 require 'AWS/AS'
 require 'AWS/ELB'
+require 'AWS/IAM'
 require 'SafeAWS/SQS'
 require 'SafeAWS/EC2'
 require 'SafeAWS/S3'
@@ -41,7 +41,7 @@ class AwsContext
   def initialize(context, logger)
     @context = context
     @logger = logger
-    @ec2 = @sqs = @s3 = @sdb = @as = @elb = nil
+    @ec2 = @sqs = @s3 = @sdb = @as = @elb = @ec3 = @iam = nil
   end
 
   # Create a AwsContext.
@@ -85,6 +85,18 @@ class AwsContext
      @ec2.logger = @logger if @logger
     end
     @ec2
+  end
+
+  # Create an ec3 interface.
+  def create_ec3(*params)
+    @ec3 = AWS::EC3.new(*params)
+    @ec3
+  end
+
+  # Create an iam interface.
+  def create_iam(*params)
+    @iam = AWS::IAM.new(*params)
+    @iam
   end
 
   # Create an sqs interface.
@@ -156,6 +168,18 @@ class AwsContext
   # Note that the parameters (if given) are only used if the interface is created.
   def ec2(*params)
     @ec2 || create_ec2(*params)
+  end
+
+  # Return an EC3 interface.  Create one if needed.
+  # Note that the parameters (if given) are only used if the interface is created.
+  def ec3(*params)
+    @ec3 || create_ec3(*params)
+  end
+
+  # Return an IAM interface.  Create one if needed.
+  # Note that the parameters (if given) are only used if the interface is created.
+  def iam(*params)
+    @iam || create_iam(*params)
   end
 
   # Return an SQS interface.  Create one if needed.
