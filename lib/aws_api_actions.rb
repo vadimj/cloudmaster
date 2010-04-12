@@ -78,6 +78,7 @@ module AwsApiActions
           begin
             result = self.class.constantize(update_parser).parse_xml(result)[0]
           rescue
+            puts "Warning: #{$!}"
           end
 
           return result
@@ -129,6 +130,7 @@ module AwsApiActions
           begin
             result = self.class.constantize(delete_parser).parse_xml(result)[0]
           rescue
+            puts "Warning: #{$!}"
           end
 
           return result

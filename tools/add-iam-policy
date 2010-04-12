@@ -1,0 +1,49 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/IAM'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+if ARGV[0] == '-?' || ARGV.size < 3 then
+    puts "usage: add-iam-policy group-name policy-name \"(allow|deny):<action1>:<resource1>[,(allow|deny):<action2>:<resource2>[,...]]\""
+    exit 1
+end
+options = {}
+options[:group_name] = ARGV[0]
+options[:policy_name] = ARGV[1]
+
+statements = []
+ARGV[2].split(',').each do |st|
+    (effect, action, resource) = st.split(':')
+    if effect.nil? or effect !~ Regexp.union(/^allow$/i, /^deny$/i)
+        puts "error in statement #{st}: effect is '#{effect}', it should be either 'allow' or 'deny'"
+        exit 1
+    end
+    statements << {
+        'Effect' => effect.capitalize,
+        'Action' => action,
+        'Resource' => resource,
+    }
+end
+
+statement = { 'Statement' => statements }
+options[:policy_document] = statement.to_json
+
+Signal.trap("INT") do
+    exit 2
+end
+
+config = BasicConfiguration.new
+iam = AwsContext.instance.iam(*config.keys)
+
+begin
+    group = iam.create_policy(options)
+    puts "added policy '#{options[:policy_name]}' to group '#{options[:group_name]}':"
+    puts options[:policy_document]
+rescue
+    puts "error creating group: #{$!}"
+    exit 1
+end
+
+exit 0

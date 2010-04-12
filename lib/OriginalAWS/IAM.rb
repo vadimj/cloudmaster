@@ -30,15 +30,61 @@ class CreateGroupResultParser < GroupParser
     @xml_member_element = '//CreateGroupResult/Group'
 end
 
+class PolicyParser < IamObject
+    include AwsObjectBuilder
+    @create_operation = 'PutPolicy'
+    
+    field :group_name
+    field :policy_name
+    field :policy_document
+end
+
 class UserParser < IamObject
     include AwsObjectBuilder
+    @describe_operation = 'ListUsers'
   
+    field :arn
     field :path
     field :user_name
+    field :user_id
+
+    # ListUsers fields    
+    field :path_prefix
+end
+
+class CreateUserResultParser < UserParser
+    @xml_member_element = '//CreateUserResult/User'
+end
+
+class AccessKeyParser < IamObject
+    include AwsObjectBuilder
+    
+    field :user_name
+    field :access_key_id
+    field :secret_access_key
+    field :status
+end
+
+class CreateAccessKeyResultParser < AccessKeyParser
+    @xml_member_element = '//CreateAccessKeyResult/AccessKey'
+end
+
+class SigningCertificateParser < IamObject
+    include AwsObjectBuilder
+    @create_operation = 'UploadSigningCertificate'
+    
+    field :user_name
+    field :certificate_body
+    field :certificate_id
+    field :status
+end
+
+class CreateSigningCertificateResultParser < SigningCertificateParser
+    @xml_member_element = '//UploadSigningCertificateResult/Certificate'
 end
 
 class IAM
     include AwsApiActions
   
-    aws_object :group, :user
+    aws_object :group, :policy, :user, :access_key, :signing_certificate
 end

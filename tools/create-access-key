@@ -6,12 +6,11 @@ require 'aws_context'
 require 'pp'
 
 if ARGV[0] == '-?' || ARGV.size < 1 then
-    puts "usage: create-iam-group group-name [group-path]"
+    puts "usage: create-access-key user-name"
     exit 1
 end
 options = {}
-options[:group_name] = ARGV[0]
-options[:path] = ARGV[1] || '/'
+options[:user_name] = ARGV[0]
 
 Signal.trap("INT") do
     exit 2
@@ -21,10 +20,10 @@ config = BasicConfiguration.new
 iam = AwsContext.instance.iam(*config.keys)
 
 begin
-    group = iam.create_group(options)
-    puts "#{group.group_name} #{group.group_id} #{group.arn}"
+    key = iam.create_access_key(options)
+    puts "#{key.user_name} #{key.access_key_id} #{key.secret_access_key} #{key.status}"
 rescue
-    puts "error creating aim group: #{$!}"
+    puts "error creating access key: #{$!}"
     exit 1
 end
 
