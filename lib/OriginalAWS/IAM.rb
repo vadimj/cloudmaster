@@ -85,6 +85,13 @@ class CreateUserResultParser < UserParser
     @xml_member_element = '//CreateUserResult/User'
 end
 
+class GroupUserParser < UserParser
+    @describe_operation = 'GetGroup'
+    @xml_member_element = '//GetGroupResult/Users/member'
+    
+    field :group_name
+end
+
 class AccessKeyParser < IamObject
     include AwsObjectBuilder
     
@@ -115,5 +122,5 @@ end
 class IAM
     include AwsApiActions
   
-    aws_object :group, :policy, :user, :access_key, :signing_certificate
+    aws_object :group, :policy, :user, :group_user, :access_key, :signing_certificate
 end
