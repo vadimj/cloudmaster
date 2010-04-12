@@ -6,6 +6,12 @@ class IamObject < AwsObject
     @api_version = '2010-01-01'
 end
 
+class ResponseMetadataParser < IamObject
+    include AwsObjectBuilder
+
+    field :request_id
+end
+
 class GroupParser < IamObject
     include AwsObjectBuilder
     @describe_operation = 'ListGroups'
@@ -20,14 +26,8 @@ class GroupParser < IamObject
     field :user_name
 end
 
-class CreateGroupResultParser < IamObject
-    include AwsObjectBuilder
-    @xml_member_element = '//CreateGroupResponse'
-  
-    field :arn
-    field :path
-    field :group_name
-    field :group_id
+class CreateGroupResultParser < GroupParser
+    @xml_member_element = '//CreateGroupResult/Group'
 end
 
 class UserParser < IamObject

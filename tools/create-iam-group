@@ -22,7 +22,7 @@ iam = AwsContext.instance.iam(*config.keys)
 
 begin
     group = iam.create_group(options)
-    p group.group_id
+    puts "#{group.group_name} #{group.group_id} #{group.arn}"
 rescue
     puts "error creating group: #{$!}"
     exit 1

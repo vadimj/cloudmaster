@@ -28,8 +28,6 @@ class AwsObject
     member_element = @xml_member_element || "//#{object_name}s/member"
     objects = []
     xml_doc.elements.each(member_element) do |elem|
-      p "***"
-      p elem.to_s
       objects << new(elem)
     end
     return objects
