@@ -1,0 +1,38 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/IAM'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+if ARGV[0] == '-?' || ARGV.size < 3 then
+   puts "usage: update-iam-group group-name (-a|-d) user-name"
+   exit 1
+end
+
+options = {}
+options[:group_name]=ARGV[0]
+
+if ARGV[1] == '-a'
+    options[:user_to_add] = ARGV[2]
+elsif ARGV[1] == '-d'
+    options[:user_to_delete] = ARGV[2]
+else
+    puts "error: '#{ARGV[1]}' - unknown flag, should be '-a' to add or '-d' to delete user from the group"
+    exit 1
+end
+
+Signal.trap("INT") do
+    exit 2
+end
+
+config = BasicConfiguration.new
+iam = AwsContext.instance.iam(*config.keys)
+
+begin
+    group = iam.update_group(options)
+    puts "updated iam group #{group.group_name} #{group.group_id} #{group.arn}"
+rescue
+    puts "error updating iam group: #{$!}"
+    exit 1
+end

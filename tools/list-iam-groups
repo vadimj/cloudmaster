@@ -5,12 +5,21 @@ require 'basic_configuration'
 require 'aws_context'
 require 'pp'
 
-if ARGV[0] == '-?'
-    puts "usage: list-aim-groups [path-prefix|user-name]"
+if ARGV[0] == '-?' or (!ARGV[0].nil? and ARGV[1].nil?)
+    puts "usage: list-aim-groups [-p path-prefix|-u user-name]"
     exit 1
 end
 
-filter = ARGV[0] || '/'
+options = {}
+if ARGV[0].nil?
+    options[:path_prefix] = '/'
+elsif ARGV[0] == '-p'
+    options[:path_prefix] = ARGV[1]
+elsif ARGV[0] == '-u'
+    options[:user_name] = ARGV[1]
+else
+    puts "error: uknown option '#{ARGV[0]}'"
+end
 
 Signal.trap("INT") do
     exit 2
@@ -20,8 +29,7 @@ config = BasicConfiguration.new
 iam = AwsContext.instance.iam(*config.keys)
 
 begin
-    groups = iam.describe_groups({ :path_prefix => filter })
-#    groups += iam.describe_groups({ :user_name => filter })
+    groups = iam.describe_groups(options)
     groups.each do |group|
         puts "#{group.group_name} #{group.group_id} #{group.arn}"
     end

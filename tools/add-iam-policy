@@ -5,30 +5,24 @@ require 'basic_configuration'
 require 'aws_context'
 require 'pp'
 
-if ARGV[0] == '-?' || ARGV.size < 3 then
-    puts "usage: add-iam-policy group-name policy-name \"(allow|deny):<action1>:<resource1>[,(allow|deny):<action2>:<resource2>[,...]]\""
+if ARGV[0] == '-?' || ARGV.size < 4 then
+    puts "usage: add-iam-policy -u user-name policy-name \"(allow|deny):<action1>:<resource1>[,(allow|deny):<action2>:<resource2>[,...]]\""
+    puts "usage: add-iam-policy -u user-name policy-name -f policy-file.json"
+    puts "usage: add-iam-policy -u user-name policy-name -p (ALL_ON_ALL|ALL_ON_CREDENTIALS)"
+    puts "usage: add-iam-policy -g group-name policy-name \"(allow|deny):<action1>:<resource1>[,(allow|deny):<action2>:<resource2>[,...]]\""
+    puts "usage: add-iam-policy -g group-name policy-name -f policy-file.json"
+    puts "usage: add-iam-policy -g group-name policy-name -p (ALL_ON_ALL|ALL_ON_CREDENTIALS)"
     exit 1
 end
 options = {}
-options[:group_name] = ARGV[0]
-options[:policy_name] = ARGV[1]
-
-statements = []
-ARGV[2].split(',').each do |st|
-    (effect, action, resource) = st.split(':')
-    if effect.nil? or effect !~ Regexp.union(/^allow$/i, /^deny$/i)
-        puts "error in statement #{st}: effect is '#{effect}', it should be either 'allow' or 'deny'"
-        exit 1
-    end
-    statements << {
-        'Effect' => effect.capitalize,
-        'Action' => action,
-        'Resource' => resource,
-    }
+if ARGV[0] == '-u'
+    options[:user_name] = ARGV[1]
+elsif ARGV[0] == '-g'
+    options[:group_name] = ARGV[1]
 end
+options[:policy_name] = ARGV[2]
 
-statement = { 'Statement' => statements }
-options[:policy_document] = statement.to_json
+options[:policy_document] = ''
 
 Signal.trap("INT") do
     exit 2
@@ -37,12 +31,81 @@ end
 config = BasicConfiguration.new
 iam = AwsContext.instance.iam(*config.keys)
 
+# if a policy file is specified
+if ARGV[3] == '-f'
+    policy_file = ARGV[4]
+    # verify
+    if policy_file.nil?
+        puts "error: you must specify policy file name after '-f' flag"
+        exit 1
+    end
+    unless File.exist?(policy_file)
+        puts "error: policy file '#{policy_file}' doesn't exist"
+    end
+    
+    # read policy from the file
+    File.open(policy_file, "r") { |f|
+        options[:policy_document] = f.read
+    }
+else
+    statements = []
+
+    # if a predefined policy is specified
+    if ARGV[3] == '-p'
+        predefined_policies = PolicyParser.PREDEFINED_POLICIES
+        # verification
+        if ARGV[4].nil?
+            puts "error: you must specify one of #{predefined_policies.keys.join(' ')} after '-p' flag"
+            exit 1
+        end
+        
+        # find the predefined policy
+        policy = predefined_policies[ARGV[4]]
+        if policy.nil?
+            puts "error: predefined policy named '#{ARGV[4]}' doesn't exist"
+            exit 1
+        end
+    
+        # fill out Statements with missing Resource if necessary
+        sts = policy['Statement']
+        sts.each do |st|
+            # if we are adding the policy to the user and the resource is empty
+            # assume that resource is the user
+            if !options[:user_name].nil? and st['Resource'].nil?
+                users = iam.describe_users({ :path_prefix => '/' })
+                user = users.detect{ |u| u.user_name == options[:user_name] }
+                st['Resource'] = user.arn if user
+            end
+            statements << st
+        end
+    # else - parse in-line policy
+    else
+        ARGV[3].split(',').each do |st|
+            (effect, action, resource) = st.split(':')
+            if effect.nil? or effect !~ Regexp.union(/^allow$/i, /^deny$/i)
+                puts "error in statement #{st}: effect is '#{effect}', it should be either 'allow' or 'deny'"
+                exit 1
+            end
+            statements << {
+                'Effect' => effect.capitalize,
+                'Action' => action,
+                'Resource' => resource,
+            }
+        end
+    end
+    
+    # convert to json
+    statement = { 'Statement' => statements }
+    options[:policy_document] = statement.to_json
+end
+
 begin
     group = iam.create_policy(options)
-    puts "added policy '#{options[:policy_name]}' to group '#{options[:group_name]}':"
+    recipient = options[:group_name].nil? ? "user '#{options[:user_name]}'" : "group '#{options[:group_name]}'"
+    puts "added policy '#{options[:policy_name]}' to #{recipient}:"
     puts options[:policy_document]
 rescue
-    puts "error creating group: #{$!}"
+    puts "error adding policy: #{$!}"
     exit 1
 end
 

@@ -24,19 +24,48 @@ class GroupParser < IamObject
     # ListGroups fields    
     field :path_prefix
     field :user_name
+    
+    # UpdateGroup fields
+    field :user_to_add
 end
 
 class CreateGroupResultParser < GroupParser
     @xml_member_element = '//CreateGroupResult/Group'
 end
 
+class UpdateGroupResultParser < GroupParser
+    @xml_member_element = '//UpdateGroupResult/Group'
+end
+
 class PolicyParser < IamObject
     include AwsObjectBuilder
     @create_operation = 'PutPolicy'
     
+    field :user_name
     field :group_name
     field :policy_name
     field :policy_document
+    
+    def self.PREDEFINED_POLICIES
+        return {
+            'ALL_ON_ALL' => {
+                'Statement' => [{
+                    'Effect' => 'Allow',
+                    'Action' => "*",
+                    'Resource' => "*",
+                }],
+            },
+            'ALL_ON_CREDENTIALS' => {
+                'Statement' => [{
+                    'Effect' => 'Allow',
+                    'Action' => ["iam:*AccessKey*","iam:*SigningCertificate*"],
+                }],
+            },
+        }
+    end
+end
+
+class CreatePolicyResultParser < PolicyParser
 end
 
 class UserParser < IamObject
