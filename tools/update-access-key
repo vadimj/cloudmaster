@@ -6,19 +6,19 @@ require 'aws_context'
 require 'pp'
 
 if ARGV[0] == '-?' || ARGV.size < 3 then
-   puts "usage: update-iam-group group-name (-a|--add|-r|--remove) user-name"
+   puts "usage: update-access-key user-name (-e|--enable|-d|--disable) access-key"
    exit 1
 end
 
 options = {}
 options[:group_name]=ARGV[0]
 
-if ARGV[1] == '-a' or ARGV[1] == '--add'
+if ARGV[1] == '-e' or ARGV[1] == '--enable'
     options[:user_to_add] = ARGV[2]
-elsif ARGV[1] == '-r' or ARGV[1] == '--remove'
+elsif ARGV[1] == '-d' or ARGV[1] == '--disable'
     options[:user_to_remove] = ARGV[2]
 else
-    puts "error: '#{ARGV[1]}' - unknown flag, should be '-a' to add or '-r' to delete user from the group"
+    puts "error: '#{ARGV[1]}' - unknown flag, should be '-e' to add or '-d' to delete user from the group"
     exit 1
 end
 

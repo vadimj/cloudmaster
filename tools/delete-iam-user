@@ -1,0 +1,29 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/IAM'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+if ARGV[0] == '-?' || ARGV.size < 1 then
+    puts "usage: delete-iam-user name"
+    exit 1
+end
+name = ARGV[0]
+
+Signal.trap("INT") do
+    exit 2
+end
+
+config = BasicConfiguration.new
+iam = AwsContext.instance.iam(*config.keys)
+
+begin
+    iam.delete_user(name)
+    puts "deleted #{name}"
+rescue
+    puts "error deleting #{name}: #{$!}"
+    exit 1
+end
+
+exit 0

@@ -27,6 +27,7 @@ class GroupParser < IamObject
     
     # UpdateGroup fields
     field :user_to_add
+    field :user_to_remove
 end
 
 class CreateGroupResultParser < GroupParser
@@ -94,6 +95,7 @@ end
 
 class AccessKeyParser < IamObject
     include AwsObjectBuilder
+    @describe_operation = 'ListAccessKeys'
     
     field :user_name
     field :access_key_id
