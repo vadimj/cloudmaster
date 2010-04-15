@@ -833,7 +833,9 @@ class EC2
       :volume_id => elem.elements['volumeId'].text,
       :status => elem.elements['status'].text,
       :start_time => elem.elements['startTime'].text,
-      :progress =>  elem.elements['progress'].text    
+      :progress =>  elem.elements['progress'].text,    
+      :owner_id => elem.elements['ownerId'].text,
+      :description => elem.elements['description'].text,
       }
     end
     return snapshots

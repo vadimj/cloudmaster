@@ -20,9 +20,9 @@ config = BasicConfiguration.new
 ec2 = AwsContext.instance.ec2(*config.keys)
 begin
   snapshots = ec2.describe_snapshots
-#  pp snapshots
+  #pp snapshots
   snapshots.each do |ss|
-    puts "#{ss[:snapshot_id]} #{ss[:volume_id]} #{ss[:progress]} #{ss[:status]} #{ss[:start_time]}"
+    puts "#{ss[:snapshot_id]} #{ss[:volume_id]} #{ss[:progress]} #{ss[:status]} #{ss[:start_time]} #{ss[:owner_id]} #{ss[:description]}"
   end
 rescue
   puts "error #{$!}"
