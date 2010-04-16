@@ -786,12 +786,13 @@ class EC2
     res
   end
 
-  def create_snapshot(volume_id)
-    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION,
-      {
+  def create_snapshot(volume_id, description = nil)
+    options = {
       'Action' => 'CreateSnapshot',
-      'VolumeId' => volume_id
-      })
+      'VolumeId' => volume_id,
+    }
+    options['Description'] = description unless description.nil?
+    parameters = build_query_params(API_VERSION, SIGNATURE_VERSION, options)
 
     response = do_query(HTTP_METHOD, ENDPOINT_URI, parameters)
     xml_doc = REXML::Document.new(response.body)

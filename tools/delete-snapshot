@@ -21,7 +21,7 @@ config = BasicConfiguration.new
 ec2 = AwsContext.instance.ec2(*config.keys)
 begin
   res = ec2.delete_snapshot(snapshot_id)
-  puts "created #{res}"
+  puts "deleted #{snapshot_id}"
 rescue
   puts "error #{$!} #{snapshot_id}"
   exit 1

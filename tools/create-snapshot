@@ -7,11 +7,12 @@ require 'pp'
 
 # Create a snapshot.
 
-if ARGV[0] == '-?' || ARGV.size != 1 then
-	puts "usage: create-snapshot volume-id"
+if ARGV[0] == '-?' || ARGV.size < 1 then
+	puts "usage: create-snapshot volume-id [description]"
 	exit 1
 end
 volume_id = ARGV[0]
+description = ARGV[1]
 
 Signal.trap("INT") do
   exit 2
@@ -20,7 +21,7 @@ end
 config = BasicConfiguration.new
 ec2 = AwsContext.instance.ec2(*config.keys)
 begin
-  res = ec2.create_snapshot(volume_id)
+  res = ec2.create_snapshot(volume_id, description)
   puts "created #{res[:snapshot_id]}"
 rescue
   puts "error #{$!} #{volume_id}"
