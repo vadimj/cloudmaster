@@ -1,0 +1,50 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/AS'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+if ARGV[0] == '-?' || ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV.size < 3
+    usage = 'usage: elb-disable-zones-for-lb LoadBalancerName --availability-zones value[,value...]'
+    about = 'Remove Availability Zones from a LoadBalancer.'
+    puts usage
+    puts about
+    exit 1
+end
+
+Signal.trap("INT") do
+    exit 2
+end
+
+options = {}
+options[:load_balancer_name] = ARGV.shift
+
+while ARGV.size > 0
+    if ARGV[0] == '--availability-zones'
+        ARGV.shift
+        options[:availability_zones] = ARGV.shift.split(',')
+    end
+end
+
+config = BasicConfiguration.new
+elb = AwsContext.instance.elb(*config.keys)
+begin
+    result = elb.delete_availability_zone(options)
+    balancers = elb.describe_load_balancers(options)
+    balancers.each do |balancer|
+        if balancer.load_balancer_name == options[:load_balancer_name]
+            puts "#{balancer.load_balancer_name} #{balancer.d_n_s_name}"
+            puts "    zones #{balancer.availability_zones.join(',')}"
+            balancer.listeners.each do |l|
+                puts "    listener #{l.load_balancer_port} #{l.instance_port} #{l.protocol}"
+            end
+            puts "    instances #{balancer.instances.join(',')}" unless balancer.instances.nil?
+        end
+    end
+rescue
+    puts "error: #{$!}"
+    exit 1
+end
+
+exit 0
