@@ -1,0 +1,42 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/AS'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+if ARGV[0] == '-?' || ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV.size < 2
+    usage = "usage: as-terminate-instance-in-auto-scaling-group InstanceId --decrement-desired-capacity/--no-decrement-desired-capacity"
+    about = "Terminate a given instance with/without reducing the group's capacity."
+    puts usage
+    puts about
+    exit 1
+end
+
+Signal.trap("INT") do
+    exit 2
+end
+
+options = {}
+options[:instance_id] = ARGV.shift
+options[:should_decrement_desired_capacity] = true
+
+while ARGV.size > 0
+    if ARGV[0] == '--no-decrement-desired-capacity'
+        ARGV.shift
+        options[:should_decrement_desired_capacity] = false
+    end
+end
+
+config = BasicConfiguration.new
+as = AwsContext.instance.as(*config.keys)
+begin
+    as.delete_instance(options)
+    extra = options[:should_decrement_desired_capacity] ? ', decrementing desired capacity' : ''
+    puts "terminating instance #{options[:instance_id]}#{extra}"
+rescue
+    puts "error: #{$!}"
+    exit 1
+end
+
+exit 0

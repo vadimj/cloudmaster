@@ -1,0 +1,55 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/AS'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+if ARGV[0] == '-?' or ARGV[0] == '--help' or ARGV[0] == '-h' or ARGV.size < 1
+    usage = "usage: as-describe-scaling-activities AutoScalingGroupName [--activity-ids value[,value...]] [--max-records value]"
+    about = "Describe a set of activities or all activities belonging to a group, describing at most max-records at a time."
+    puts usage
+    puts about
+    exit 1
+end
+
+Signal.trap("INT") do
+    exit 2
+end
+
+options = {}
+options[:auto_scaling_group_name]=ARGV.shift
+
+while ARGV.size > 0
+    if ARGV[0] == '--activity-ids'
+        ARGV.shift
+        options[:activity_ids] = ARGV.shift.split(',')
+    end
+    if ARGV[0] == '--max-records'
+        ARGV.shift
+        options[:max_records] = ARGV.shift
+    end
+end
+
+config = BasicConfiguration.new
+as = AwsContext.instance.as(*config.keys)
+begin
+    activitys = as.describe_scaling_activitys(options)
+    activitys.each do |a|
+#  field :activity_id
+#  field :auto_scaling_group_name
+#  field :cause
+#  field :description
+#  field :end_time
+#  field :start_time
+#  field :progress
+#  field :status_code
+#  field :status_message
+        pp a
+    end
+rescue
+    puts "error: #{$!}"
+    exit 1
+end
+
+
