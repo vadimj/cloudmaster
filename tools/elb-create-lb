@@ -5,43 +5,64 @@ require 'basic_configuration'
 require 'aws_context'
 require 'pp'
 
-if ARGV[0] == '-?' || ARGV.size < 3 then
-   puts "usage: create-load-balancer balancer-name zone1[,zone2[,...]] balancer-port-1:instance-port-1:protocol-1[,balancer-port-2:instance-port-2:protocol-2[,...]]"
-   exit 1
-end
-options = {}
-options[:load_balancer_name]=ARGV[0]
+valid_protocol = "TCP|HTTP"
 
-options[:availability_zones] = []
-ARGV[1].split(',').each do |zone|
-    options[:availability_zones] << zone
-end
-
-options[:listeners] = []
-ARGV[2].split(',').each do |listener|
-    m = listener.split(':')
-    unless (!m[2].nil? and (m[2] == 'TCP' or m[2] == 'HTTP'))
-        puts "#{m[2]} is not a valid protocol, valid protocols are: TCP HTTP"
-        exit 1
-    end
-    options[:listeners] << {
-        :load_balancer_port => m[0],
-        :instance_port => m[1],
-        :protocol => m[2],
-    }
+if ARGV[0] == '-?' || ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV.size < 5
+    usage = 'usage: elb-create-lb LoadBalancerName --availability-zones value[,value...] --listener "protocol=value,lb-port=value,instance-port=value" [--listener "protocol=value,lb-port=value,instance-port=value"...]'
+    about = 'Create a new LoadBalancer.'
+    puts usage
+    puts about
+    exit 1
 end
 
 Signal.trap("INT") do
-  exit 2
+    exit 2
+end
+
+options = {}
+options[:load_balancer_name] = ARGV.shift
+
+options[:listeners] = []
+while ARGV.size > 0
+    if ARGV[0] == '--availability-zones'
+        ARGV.shift
+        options[:availability_zones] = ARGV.shift.split(',')
+    end
+    #--listener "protocol=value,lb-port=value,instance-port=value"
+    if ARGV[0] == '--listener'
+        ARGV.shift
+        l = {}
+        ARGV.shift.split(',').each do |param|
+            (key,value) = param.split('=')
+            if key == 'protocol'
+                l[:protocol] = value
+            elsif key == 'lb-port'
+                l[:load_balancer_port] = value
+            elsif key == 'instance-port'
+                l[:instance_port] = value
+            else
+                 puts "Error: #{key} is not a valid listener parameter in #{param}"
+                 exit 1
+            end
+        end
+        unless l[:protocol] =~ Regexp.new("[#{valid_protocol}]")
+            puts "Error: protocol must be one of #{valid_protocol.gsub('|',', ')}"
+            exit 1
+        end
+        options[:listeners] << l
+    end
 end
 
 config = BasicConfiguration.new
 elb = AwsContext.instance.elb(*config.keys)
+
 begin
-  result = elb.create_load_balancer(options)
-  dns_name = result.respond_to?("d_n_s_name") ? ' '+result.d_n_s_name : ''
-  puts "created load balancer #{options[:load_balancer_name]}#{dns_name}"
+    result = elb.create_load_balancer(options)
+    dns_name = result.respond_to?("d_n_s_name") ? ' '+result.d_n_s_name : ''
+    puts "created #{options[:load_balancer_name]}#{dns_name}"
 rescue
-  puts "error #{$!} #{options[:load_balancer_name]}"
-  exit 1
+    puts "error: #{$!}"
+    exit 1
 end
+
+exit 0

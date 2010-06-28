@@ -5,22 +5,29 @@ require 'basic_configuration'
 require 'aws_context'
 require 'pp'
 
-if ARGV[0] == '-?' || ARGV.size < 1 then
-   puts "usage: delete-as-group name"
-   exit 1
+if ARGV[0] == '-?' || ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV.size < 1
+    usage = "usage: as-delete-auto-scaling-group AutoScalingGroupName"
+    about = "Delete the specified auto scaling group if the group has no instances and no scaling activities in progress."
+    puts usage
+    puts about
+    exit 1
 end
-name = ARGV[0]
 
 Signal.trap("INT") do
-  exit 2
+    exit 2
 end
+
+options = {}
+options[:auto_scaling_group_name] = ARGV.shift
 
 config = BasicConfiguration.new
 as = AwsContext.instance.as(*config.keys)
 begin
-  as.delete_auto_scaling_group(name)
-  puts "deleted #{name}"
+    as.delete_auto_scaling_group(options)
+    puts "deleted #{options[:auto_scaling_group_name]}"
 rescue
-  puts "error #{$!}"
-  exit 1
+    puts "error: #{$!}"
+    exit 1
 end
+
+exit 0

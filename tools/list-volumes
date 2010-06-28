@@ -20,7 +20,7 @@ config = BasicConfiguration.new
 ec2 = AwsContext.instance.ec2(*config.keys)
 begin
   volumes = ec2.describe_volumes
-  #pp volumes
+  ##pp volumes
   volumes.each do |vol|
     puts "#{vol[:volume_id]} #{vol[:snapshot_id]} #{vol[:size]} #{vol[:availability_zone]} #{vol[:status]}"
     vol[:attachment_set].each do |att|

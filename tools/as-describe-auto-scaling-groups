@@ -5,49 +5,51 @@ require 'basic_configuration'
 require 'aws_context'
 require 'pp'
 
-# $Id$
-# List all autoscaling groups
-# If a pattern is supplied, it is used to filter the output.
-
-if ARGV[0] == '-?'
-  puts "usage: list-as-groups [pattern]"
-  exit 1
-end
-
-if ARGV.size > 0 then
-  filter=Regexp.new(ARGV[0])
-else
-  filter=Regexp.new('.*')
+if ARGV[0] == '-?' || ARGV[0] == '--help' || ARGV[0] == '-h'
+    usage = "usage: as-describe-auto-scaling-groups [AutoScalingGroupName [AutoScalingGroupName ...]]"
+    about = "Describe the specified auto scaling group(s) if the group(s) exists."
+    puts usage
+    puts about
+    exit 1
 end
 
 Signal.trap("INT") do
-  exit 2
+    exit 2
+end
+
+filters = []
+if ARGV.size == 0
+    filters << Regexp.new('.*')
+else
+    filters = ARGV.collect{ |v| Regexp.new(v) }
 end
 
 config = BasicConfiguration.new
 as = AwsContext.instance.as(*config.keys)
 begin
-  groups = as.describe_auto_scaling_groups({})
-  groups.each do |group|
-    if group.auto_scaling_group_name =~ filter
-      puts "#{group.auto_scaling_group_name} configuration:#{group.launch_configuration_name} zones:#{group.availability_zones.join(',')} min:#{group.min_size} max:#{group.max_size} desired:#{group.desired_capacity} cooldown:#{group.cooldown}s"
-      options = {}
-      options[:auto_scaling_group_name]=group.auto_scaling_group_name
-      triggers = as.describe_triggers(options)
-      unless triggers.nil?
-        triggers.each do |t|
-          puts "    trigger #{t.trigger_name} #{t.statistic} #{t.measure_name} in #{t.unit} lower:#{t.lower_threshold}:#{t.lower_breach_scale_increment} upper:#{t.upper_threshold}:#{t.upper_breach_scale_increment} period:#{t.period}s duration:#{t.breach_duration}s"
+    groups = as.describe_auto_scaling_groups({})
+    groups.each do |group|
+        unless filters.detect{ |f| group.auto_scaling_group_name =~ f }.nil?
+            puts "#{group.auto_scaling_group_name} configuration:#{group.launch_configuration_name} zones:#{group.availability_zones.join(',')} min:#{group.min_size} max:#{group.max_size} desired:#{group.desired_capacity} cooldown:#{group.cooldown}s"
+            options = {}
+            options[:auto_scaling_group_name]=group.auto_scaling_group_name
+            triggers = as.describe_triggers(options)
+            unless triggers.nil?
+                triggers.each do |t|
+                    puts "    trigger #{t.trigger_name} #{t.statistic} #{t.measure_name} in #{t.unit} lower:#{t.lower_threshold}:#{t.lower_breach_scale_increment} upper:#{t.upper_threshold}:#{t.upper_breach_scale_increment} period:#{t.period}s duration:#{t.breach_duration}s"
+                end
+            end
+            puts "    balancers #{group.load_balancer_names.join(',')}" unless group.load_balancer_names.nil?
+            unless group.instances.nil?
+                group.instances.each do |i|
+                    puts "    instance #{i.instance_id} #{i.lifecycle_state} #{i.availability_zone}"
+                end
+            end
         end
-      end
-      puts "    balancers #{group.load_balancer_names.join(',')}" unless group.load_balancer_names.nil?
-      unless group.instances.nil?
-        group.instances.each do |i|
-          puts "    instance #{i.instance_id} #{i.lifecycle_state} #{i.availability_zone}"
-        end
-      end
     end
-  end
 rescue
-  puts "error #{$!}"
-  exit 1
+    puts "error: #{$!}"
+    exit 1
 end
+
+exit 0

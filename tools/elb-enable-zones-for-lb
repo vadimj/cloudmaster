@@ -6,7 +6,7 @@ require 'aws_context'
 require 'pp'
 
 if ARGV[0] == '-?' || ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV.size < 3
-    usage = 'usage: elb-enable-availability-zones-for-lb LoadBalancerName --availability-zones value[,value...]'
+    usage = 'usage: elb-enable-zones-for-lb LoadBalancerName --availability-zones value[,value...]'
     about = 'Add Availability Zones to an existing LoadBalancer.'
     puts usage
     puts about

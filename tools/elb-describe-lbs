@@ -5,41 +5,50 @@ require 'basic_configuration'
 require 'aws_context'
 require 'pp'
 
-# $Id$
-# List all load balancers.
-# If a pattern is supplied, it is used to filter the output.
-
-if ARGV[0] == '-?'
-  puts "usage: list-load-balancers [pattern]"
-  exit 1
-end
-
-if ARGV.size > 0 then
-  filter=Regexp.new(ARGV[0])
-else
-  filter=Regexp.new('.*')
+if ARGV[0] == '-?' || ARGV[0] == '--help' || ARGV[0] == '-h'
+    usage = 'usage: elb-describe-lbs [LoadBalancerName [LoadBalancerName...]] [--long]'
+    about = 'Describe the properties of LoadBalancers.'
+    puts usage
+    puts about
+    exit 1
 end
 
 Signal.trap("INT") do
-  exit 2
+    exit 2
 end
+
+long = false
+filters = []
+options = {}
+
+while ARGV.size > 0
+    if ARGV[0] == '--long'
+        ARGV.shift
+		long = true
+    else
+	    filters = ARGV.collect{ |v| Regexp.new(ARGV.shift) }
+    end
+end
+
+filters << Regexp.new('.*') if filters.empty?
 
 config = BasicConfiguration.new
 elb = AwsContext.instance.elb(*config.keys)
-
 begin
-  balancers = elb.describe_load_balancers({})
-  balancers.each do |balancer|
-    if balancer.load_balancer_name =~ filter or balancer.d_n_s_name =~ filter
-      puts "#{balancer.load_balancer_name} #{balancer.d_n_s_name}"
-      puts "    zones #{balancer.availability_zones.join(',')}"
-      balancer.listeners.each do |l|
-        puts "    listener #{l.load_balancer_port} #{l.instance_port} #{l.protocol}"
-      end
-      puts "    instances #{balancer.instances.join(',')}" unless balancer.instances.nil?
+    balancers = elb.describe_load_balancers(options)
+    balancers.each do |balancer|
+        unless filters.detect{ |f| balancer.load_balancer_name =~ f or balancer.d_n_s_name =~ f}.nil?
+            puts "#{balancer.load_balancer_name} #{balancer.d_n_s_name}"
+            puts "    zones #{balancer.availability_zones.join(',')}"
+            balancer.listeners.each do |l|
+                puts "    listener #{l.load_balancer_port} #{l.instance_port} #{l.protocol}"
+            end
+            puts "    instances #{balancer.instances.join(',')}" unless balancer.instances.nil?
+        end
     end
-  end
 rescue
-  puts "error #{$!}"
-  exit 1
+    puts "error: #{$!}"
+    exit 1
 end
+
+exit 0

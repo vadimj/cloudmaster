@@ -44,8 +44,26 @@ class CreateLoadBalancerResultParser < ElbObject
   field :d_n_s_name
 end
 
+class AvailabilityZoneParser < ElbObject
+  include AwsObjectBuilder
+  @create_operation = 'EnableAvailabilityZonesForLoadBalancer'
+  @delete_operation = 'DisableAvailabilityZonesForLoadBalancer'
+  
+  field :load_balancer_name
+  multi_field :availability_zones
+end
+
+class ElbInstanceParser < ElbObject
+  include AwsObjectBuilder
+  @create_operation = 'RegisterInstancesWithLoadBalancer'
+  @delete_operation = 'DeregisterInstancesFromLoadBalancer'
+  
+  field :load_balancer_name
+  multi_field :instances
+end
+
 class ELB
   include AwsApiActions
   
-  aws_object :load_balancer
+  aws_object :load_balancer, :availability_zone, :instance
 end

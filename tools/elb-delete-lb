@@ -5,22 +5,29 @@ require 'basic_configuration'
 require 'aws_context'
 require 'pp'
 
-if ARGV[0] == '-?' || ARGV.size < 1 then
-   puts "usage: delete-load-balancer name"
-   exit 1
+if ARGV[0] == '-?' || ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV.size < 1
+    usage = "usage: elb-delete-lb LoadBalancerName"
+    about = "Delete an existing LoadBalancer."
+    puts usage
+    puts about
+    exit 1
 end
-name = ARGV[0]
 
 Signal.trap("INT") do
-  exit 2
+    exit 2
 end
+
+options = {}
+options[:load_balancer_name] = ARGV.shift
 
 config = BasicConfiguration.new
 elb = AwsContext.instance.elb(*config.keys)
 begin
-  elb.delete_load_balancer(name)
-  puts "deleted #{name}"
+    elb.delete_load_balancer(options)
+    puts "deleted #{options[:load_balancer_name]}"
 rescue
-  puts "error #{$!} #{name}"
-  exit 1
+    puts "error: #{$!}"
+    exit 1
 end
+
+exit 0

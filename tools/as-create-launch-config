@@ -5,69 +5,73 @@ require 'basic_configuration'
 require 'aws_context'
 require 'pp'
 
-if ARGV[0] == '-?' || ARGV.size < 2 then
-   puts "usage: create-launch-config config-name image_id [instance_type [group1,group2 [volume1:device1,volume2:device2]]]"
-   exit 1
-end
-options = {}
-options[:launch_configuration_name]=ARGV[0]
-options[:image_id]=ARGV[1]
-options[:instance_type]=ARGV[2] || 'm1.small'
-
-options[:security_groups] = []
-ARGV[3] ||= ''
-ARGV[3].split(',').each do |group|
-   options[:security_groups] << group
-end
-
-options[:block_device_mappings] = []
-ARGV[4] ||= ''
-ARGV[4].split(',').each do |mapping|
-   m = mapping.split(':')
-   options[:block_device_mappings] << {
-      :virtual_name => m[0],
-      :device_name => m[1],
-   }
+if ARGV[0] == '-?' || ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV.size < 3
+    usage = 'usage: as-create-launch-config LaunchConfigurationName --image-id value [--instance-type value] [--block-device-mapping "key1=value,key2=value2..."] [--kernel value] [--key value] [--ramdisk value] [--group value[,value...]] [--user-data value] [--user-data-file value]'
+    about = 'Create a new launch config with specified attributes.'
+    puts usage
+    puts about
+    exit 1
 end
 
 Signal.trap("INT") do
-  exit 2
+    exit 2
 end
+
+options = {}
+options[:launch_configuration_name] = ARGV.shift
+
+while ARGV.size > 0
+    if ARGV[0] == '--image-id'
+        ARGV.shift
+        options[:image_id] = ARGV.shift
+    end
+    if ARGV[0] == '--instance-type'
+        ARGV.shift
+        options[:instance_type] = ARGV.shift
+    end
+    if ARGV[0] == '--block-device-mapping'
+        ARGV.shift
+        options[:block_device_mappings] = []
+        ARGV.shift.split(',').each do |mapping|
+            m = mapping.split('=')
+            options[:block_device_mappings] << {
+                :virtual_name => m[0],
+                :device_name => m[1],
+            }
+        end
+    end
+    if ARGV[0] == '--kernel'
+        ARGV.shift
+        options[:kernel_id] = ARGV.shift
+    end
+    if ARGV[0] == '--key'
+        ARGV.shift
+        options[:key_name] = ARGV.shift
+    end
+    if ARGV[0] == '--ramdisk'
+        ARGV.shift
+        options[:ramdisk_id] = ARGV.shift
+    end
+    if ARGV[0] == '--group'
+        ARGV.shift
+        options[:security_groups] = ARGV.shift.split(',')
+    end
+    if ARGV[0] == '--user-data'
+        ARGV.shift
+        options[:user_data] = ARGV.shift
+    end
+end
+
+options[:instance_type] ||= 'm1.small'
 
 config = BasicConfiguration.new
 as = AwsContext.instance.as(*config.keys)
-ec2 = AwsContext.instance.ec2(*config.keys)
-
-image_id = options[:image_id]
-attr='launchPermission'
-begin
-    res = ec2.describe_image_attribute(image_id, attr)
-    if res.nil? or res[:id].nil?
-        puts "error #{image_id} is not a valid image id"
-        exit 1
-    end
-rescue
-    puts "error failed to verify image id #{image_id}: #{$!}"
-    exit 1
-end
-
-begin
-    groups = ec2.describe_security_groups.collect{ |g| g[:name] }
-    options[:security_groups].each do |name|
-        unless groups.include?(name)
-            puts "error #{name} is not a valid security group"
-            exit 1
-        end
-    end
-rescue
-    puts "error failed to verify security groups: #{$!}"
-    exit 1
-end
     
 begin
-  lc = as.create_launch_configuration(options)
-  puts "created launch configuration #{options[:launch_configuration_name]}"
+    lc = as.create_launch_configuration(options)
 rescue
-  puts "error #{$!} #{options[:launch_configuration_name]}"
-  exit 1
+    puts "error: #{$!}"
+    exit 1
 end
+
+exit 0

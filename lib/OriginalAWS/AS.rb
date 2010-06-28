@@ -22,6 +22,7 @@ class LaunchConfigurationParser < AsObject
   field :kernel_id
   field :key_name
   field :created_time
+  field :max_records
   encoder :user_data, :encode_base64
   multi_field :load_balancer_names
   multi_field :security_groups
@@ -61,10 +62,12 @@ end
 
 class InstanceParser < AsObject
   include AwsObjectBuilder
+  @delete_operation = 'TerminateInstanceInAutoScalingGroup'
 
   field :instance_id
   field :lifecycle_state
   field :availability_zone
+  field :should_decrement_desired_capacity
 end
 
 class TriggerParser < AsObject
@@ -113,6 +116,7 @@ class ScalingActivityParser < AsObject
   field :progress
   field :status_code
   field :status_message
+  field :max_records
 end
 
 class DesiredCapacityParser < AsObject
@@ -126,5 +130,5 @@ end
 class AS
   include AwsApiActions
   
-  aws_object :launch_configuration, :auto_scaling_group, :trigger, :scaling_activity, :desired_capacity
+  aws_object :launch_configuration, :auto_scaling_group, :trigger, :scaling_activity, :desired_capacity, :instance
 end

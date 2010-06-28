@@ -111,8 +111,11 @@ module AwsApiActions
           signature_version = self.class.constantize(parser).signature_version || SIGNATURE_VERSION
           http_method = self.class.constantize(parser).http_method || HTTP_METHOD
 
+          object = self.class.constantize(parser).new(options)
+          action = object.delete_operation || "Delete#{klass}"
+
           ps = {
-            'Action' => "Delete#{klass}",
+            'Action' => action,
           }
 
           if options.is_a? String

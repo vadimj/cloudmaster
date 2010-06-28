@@ -5,47 +5,58 @@ require 'basic_configuration'
 require 'aws_context'
 require 'pp'
 
-if ARGV[0] == '-?' || ARGV.size < 5 then
-   puts "usage: update-as-group group-name launch-config zone1[,zone2[,zone3...]] cooldown-sec min_size [max_size]"
-   exit 1
+if ARGV[0] == '-?' || ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV.size < 3
+    usage = "usage: as-update-auto-scaling-group AutoScalingGroupName --availability-zones value[,value...] [--cooldown value] [--launch-configuration value] [--max-size value] [--min-size value]"
+    about = "Update specified auto scaling groups with attributes."
+    puts usage
+    puts about
+    exit 1
 end
-options = {}
-options[:auto_scaling_group_name]=ARGV[0]
-options[:launch_configuration_name]=ARGV[1]
-
-options[:availability_zones] = []
-ARGV[2].split(',').each do |zone|
-    options[:availability_zones] << zone
-end
-
-options[:cooldown] = ARGV[3]
-options[:min_size] = ARGV[4]
-options[:max_size] = ARGV[5] || options[:min_size]
 
 Signal.trap("INT") do
-  exit 2
+    exit 2
+end
+
+options = {}
+options[:auto_scaling_group_name] = ARGV.shift
+
+while ARGV.size > 0
+    if ARGV[0] == '--availability-zones'
+        ARGV.shift
+        options[:availability_zones] = ARGV.shift.split(',')
+    end
+    if ARGV[0] == '--cooldown'
+        ARGV.shift
+        options[:cooldown] = ARGV.shift
+    end
+    if ARGV[0] == '--launch-configuration'
+        ARGV.shift
+        options[:launch_configuration_name] = ARGV.shift
+    end
+    if ARGV[0] == '--max-size'
+        ARGV.shift
+        options[:max_size] = ARGV.shift
+    end
+    if ARGV[0] == '--min-size'
+        ARGV.shift
+        options[:min_size] = ARGV.shift
+    end
 end
 
 config = BasicConfiguration.new
 as = AwsContext.instance.as(*config.keys)
 
-# verifying launch configuration
 begin
-   lcs = as.describe_launch_configurations({})
-   lc_names = lcs.collect{ |lc| lc.launch_configuration_name }
-   unless lc_names.include? options[:launch_configuration_name]
-      puts "error #{options[:launch_configuration_name]} is not a valid launch configuration"
-      exit 1         
-   end
+    result = as.update_auto_scaling_group(options)
+    groups = as.describe_auto_scaling_groups({})
+    groups.each do |group|
+        if group.auto_scaling_group_name == options[:auto_scaling_group_name]
+            puts "#{group.auto_scaling_group_name} configuration:#{group.launch_configuration_name} zones:#{group.availability_zones.join(',')} min:#{group.min_size} max:#{group.max_size} desired:#{group.desired_capacity} cooldown:#{group.cooldown}s"
+        end
+    end
 rescue
-   puts "error retrieving list of launch configurations #{$!}"
-   exit 1
+    puts "error: #{$!}"
+    exit 1
 end
 
-begin
-  result = as.update_auto_scaling_group(options)
-  puts "updated auto scaling group #{options[:auto_scaling_group_name]}"
-rescue
-  puts "error #{$!}"
-  exit 1
-end
+exit 0

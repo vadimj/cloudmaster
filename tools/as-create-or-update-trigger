@@ -9,90 +9,116 @@ valid_statistic = "Minimum|Maximum|Sum|Average"
 valid_measure_name = "CPUUtilization|NetworkIn|NetworkOut|DiskWriteOps|DiskReadBytes|DiskReadOps|DiskWriteBytes"
 valid_unit = "Seconds|Percent|Bytes|Bits|Count|BytesPerSecond|BitsPerSecond|CountPerSecond|None"
 
-if ARGV[0] == '-?' || ARGV.size < 7 then
-   puts "usage: create-as-trigger trigger-name as-group-name #{valid_statistic} #{valid_measure_name} #{valid_unit} l-threshold:[-]l-increment[%] u-threshold:[-]u-increment[%] [period-min [duration-min]]"
-   exit 1
+if ARGV[0] == '-?' || ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV.size < 19
+    usage = 'usage: as-create-or-update-trigger TriggerName --auto-scaling-group value --breach-duration value --lower-breach-increment value --lower-threshold value --measure value --period value --statistic value --upper-breach-increment value --upper-threshold value [--dimensions "key1=value,key2=value2..."] [--namespace value] [--unit value]'
+    about = 'Create a new trigger or update an existing trigger.'
+    puts usage
+    puts about
+    exit 1
 end
+
+Signal.trap("INT") do
+    exit 2
+end
+
 options = {}
-options[:trigger_name] = ARGV[0]
-options[:auto_scaling_group_name] = ARGV[1]
-options[:statistic] = ARGV[2]
-options[:measure_name] = ARGV[3]
-options[:unit] = ARGV[4]
-lower = ARGV[5].split(':')
-options[:lower_threshold] = lower[0]
-options[:lower_breach_scale_increment] = lower[1]
-upper = ARGV[6].split(':')
-options[:upper_threshold] = upper[0]
-options[:upper_breach_scale_increment] = upper[1]
-options[:dimensions] = [
-    {
-        :name => 'AutoScalingGroupName',
-        :value => options[:auto_scaling_group_name]
-    }
-]
+options[:trigger_name] = ARGV.shift
+
+while ARGV.size > 0
+    if ARGV[0] == '--auto-scaling-group'
+        ARGV.shift
+        options[:auto_scaling_group_name] = ARGV.shift
+    end
+    if ARGV[0] == '--breach-duration'
+        ARGV.shift
+        options[:breach_duration] = ARGV.shift
+    end
+    if ARGV[0] == '--lower-breach-increment'
+        ARGV.shift
+        options[:lower_breach_scale_increment] = ARGV.shift
+    end
+    if ARGV[0] == '--lower-threshold'
+        ARGV.shift
+        options[:lower_threshold] = ARGV.shift
+    end
+    if ARGV[0] == '--measure'
+        ARGV.shift
+        options[:measure_name] = ARGV.shift
+    end
+    if ARGV[0] == '--statistic'
+        ARGV.shift
+        options[:statistic] = ARGV.shift
+    end
+    if ARGV[0] == '--upper-breach-increment'
+        ARGV.shift
+        options[:upper_breach_scale_increment] = ARGV.shift
+    end
+    if ARGV[0] == '--upper-threshold'
+        ARGV.shift
+        options[:upper_threshold] = ARGV.shift
+    end
+    if ARGV[0] == '--period'
+        ARGV.shift
+        options[:period] = ARGV.shift
+    end
+    if ARGV[0] == '--dimensions'
+        ARGV.shift
+        options[:dimensions] = []
+        ARGV.shift.split(',').each do |dimension|
+            d = dimension.split('=')
+            options[:dimensions] << {
+                :name => d[0],
+                :value => d[1],
+            }
+        end
+    end
+    if ARGV[0] == '--namespace'
+        ARGV.shift
+        options[:namespace] = ARGV.shift
+    end
+    if ARGV[0] == '--unit'
+        ARGV.shift
+        options[:unit] = ARGV.shift
+    end
+end
+
+if options[:dimensions].nil?
+    options[:dimensions] = [
+        { :name => 'AutoScalingGroupName', :value => options[:auto_scaling_group_name] }
+    ]
+end
 
 unless options[:statistic] =~ Regexp.new("[#{valid_statistic}]")
-    puts "Error: #{options[:statistic]} must be one of #{valid_statistic}"
+    puts "Error: #{options[:statistic]} must be one of #{valid_statistic.gsub('|',', ')}"
     exit 1
 end
 
 unless options[:measure_name] =~ Regexp.new("[#{valid_measure_name}]")
-    puts "Error: #{options[:measure_name]} must be one of #{valid_measure_name}"
+    puts "Error: #{options[:measure_name]} must be one of #{valid_measure_name.gsub('|',', ')}"
     exit 1
 end
 
-unless options[:unit] =~ Regexp.new("[#{valid_unit}]")
-    puts "Error: #{options[:unit]} must be one of #{valid_unit}"
+unless options[:unit].nil? or options[:unit] =~ Regexp.new("[#{valid_unit}]")
+    puts "Error: #{options[:unit]} must be one of #{valid_unit.gsub('|',', ')}"
     exit 1
-end
-
-if ARGV[7].nil?
-    options[:period] = 60
-else
-    begin
-        options[:period] = ARGV[7].to_i*60 
-    rescue
-        puts "Failed to calculate period for value #{ARGV[7]} - not a valid number?: #{$!}"
-        exit 1
-    end
-end
-
-if ARGV[8].nil?
-    options[:breach_duration] = options[:period]*5
-else
-    begin
-        options[:breach_duration] = ARGV[8].to_i*60
-    rescue
-        puts "Failed to calculate breach_duration for value #{ARGV[8]} - not a valid number?: #{$!}"
-        exit 1
-    end
-end
-
-Signal.trap("INT") do
-  exit 2
 end
 
 config = BasicConfiguration.new
 as = AwsContext.instance.as(*config.keys)
 
-# verifying group
-begin
-   asgs = as.describe_auto_scaling_groups({})
-   asg_names = asgs.collect{ |asg| asg.auto_scaling_group_name }
-   unless asg_names.include? options[:auto_scaling_group_name]
-      puts "Error: #{options[:auto_scaling_group_name]} is not a valid auto scaling group"
-      exit 1         
-   end
-rescue
-   puts "Error retrieving list of auto scaling groups: #{$!}"
-   exit 1
-end
-
 begin
     result = as.create_trigger(options)
-    puts "created auto scaling trigger #{options[:trigger_name]}"
+    triggers = as.describe_triggers({:auto_scaling_group_name => options[:auto_scaling_group_name]})
+    triggers.each do |t|
+        next unless t.trigger_name == options[:trigger_name]
+        puts "trigger #{t.trigger_name} #{t.statistic} #{t.measure_name} in #{t.unit} measured every #{t.period} seconds"
+        puts "    breach duration #{t.breach_duration}"
+        puts "    lower #{t.lower_threshold} increment #{t.lower_breach_scale_increment}"
+        puts "    upper #{t.upper_threshold} increment #{t.upper_breach_scale_increment}"
+    end
 rescue
     puts "error #{$!}"
     exit 1
 end
+
+exit 0
