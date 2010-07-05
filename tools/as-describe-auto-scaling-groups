@@ -36,7 +36,7 @@ begin
             triggers = as.describe_triggers(options)
             unless triggers.nil?
                 triggers.each do |t|
-                    puts "    trigger #{t.trigger_name} #{t.statistic} #{t.measure_name} in #{t.unit} lower:#{t.lower_threshold}:#{t.lower_breach_scale_increment} upper:#{t.upper_threshold}:#{t.upper_breach_scale_increment} period:#{t.period}s duration:#{t.breach_duration}s"
+                    puts "    trigger #{t.namespace}::#{t.trigger_name} #{t.statistic} #{t.measure_name} in #{t.unit} lower:#{t.lower_threshold}:#{t.lower_breach_scale_increment} upper:#{t.upper_threshold}:#{t.upper_breach_scale_increment} period:#{t.period}s duration:#{t.breach_duration}s"
                 end
             end
             puts "    balancers #{group.load_balancer_names.join(',')}" unless group.load_balancer_names.nil?

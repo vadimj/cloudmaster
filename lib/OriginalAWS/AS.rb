@@ -98,6 +98,7 @@ class TriggerParser < AsObject
   # Constraints: Must be a multiple of 60
   field :breach_duration 
 
+  field :namespace
   multi_field :dimensions, :dimension
   # Custom units are currently not available.
   #  field :custom_unit

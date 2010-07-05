@@ -27,7 +27,7 @@ as = AwsContext.instance.as(*config.keys)
 begin
     triggers = as.describe_triggers(options)
     triggers.each do |t|
-        puts "trigger #{t.trigger_name} #{t.statistic} #{t.measure_name} in #{t.unit} measured every #{t.period} seconds"
+        puts "trigger #{t.namespace}::#{t.trigger_name} #{t.statistic} #{t.measure_name} in #{t.unit} measured every #{t.period} seconds"
         puts "    breach duration #{t.breach_duration}"
         puts "    lower #{t.lower_threshold} increment #{t.lower_breach_scale_increment}"
         puts "    upper #{t.upper_threshold} increment #{t.upper_breach_scale_increment}"
