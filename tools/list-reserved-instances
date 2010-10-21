@@ -21,7 +21,7 @@ begin
   instances = ec2.describe_reserved_instances
   instances.each do |i|
     duration = i[:duration].to_i / (60*60*24*30)
-    puts "#{i[:zone]} #{i[:instance_type]} #{i[:count]} #{duration}months $#{i[:fixed_price]} $#{i[:usage_price]} #{i[:state]}"
+    puts "#{i[:zone]} #{i[:instance_type]} #{i[:count]} #{i[:start]} #{duration}months $#{i[:fixed_price]} $#{i[:usage_price]} #{i[:state]}"
   end
 rescue
   puts "error #{$!}"
