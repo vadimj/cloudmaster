@@ -43,7 +43,7 @@ begin
             balancer.listeners.each do |l|
                 puts "    listener #{l.load_balancer_port} #{l.instance_port} #{l.protocol}"
             end
-            puts "    instances #{balancer.instances.join(',')}" unless balancer.instances.nil?
+            puts "    instances #{balancer.instances.collect{|i| i.instance_id}.join(',')}" unless balancer.instances.nil?
         end
     end
 rescue

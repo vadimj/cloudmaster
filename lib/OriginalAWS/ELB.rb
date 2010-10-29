@@ -8,7 +8,9 @@ end
 
 class HealthCheckParser < ElbObject
   include AwsObjectBuilder
+  @create_operation = 'ConfigureHealthCheck'
 
+  field :load_balancer_name
   field :target
   field :interval
   field :timeout
@@ -33,7 +35,7 @@ class LoadBalancerParser < ElbObject
   field :d_n_s_name
   field :health_check, :health_check
   multi_field :availability_zones
-  multi_field :instances
+  multi_field :instances, :elb_instance
   multi_field :listeners, :listener
 end
 
@@ -59,11 +61,12 @@ class ElbInstanceParser < ElbObject
   @delete_operation = 'DeregisterInstancesFromLoadBalancer'
   
   field :load_balancer_name
+  field :instance_id
   multi_field :instances
 end
 
 class ELB
   include AwsApiActions
   
-  aws_object :load_balancer, :availability_zone, :instance
+  aws_object :load_balancer, :availability_zone, :instance, :health_check
 end
