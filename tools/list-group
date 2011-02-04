@@ -8,8 +8,8 @@ require 'pp'
 # Display rules for a given security group.
 
 if ARGV[0] == '-?' || ARGV.size != 1 then
-   puts "usage: list-group group"
-   exit 1
+  puts "usage: list-group group"
+  exit 1
 end
 group=ARGV[0]
 
@@ -23,11 +23,33 @@ begin
   groups = ec2.describe_security_groups(group)
   #pp groups
   groups.each do |group|
-     puts "#{group[:name]} -- #{group[:description]}"
-     grants = group[:grants]
-     grants.each do |grant|
-       puts "  #{grant[:protocol]} #{grant[:from_port]}-#{grant[:to_port]} #{grant[:to_ort]} #{grant[:ip_range]}"
-     end
+    puts "#{group[:name]} -- #{group[:description]}"
+    grants = group[:grants]
+  
+    # grab all IP based grant statements
+    ip_grants = grants.select { |g| !g[:ip_range].nil? && !g[:ip_range].empty? }
+    
+    group_grants = grants.select{ |g| !g[:groups].nil? }.inject({}) { |hash,grant|
+      grant[:groups].each { |g| hash["#{g[:user_id]}:#{g[:name]}"] = g; } unless grant[:groups].nil?
+      hash
+    }.values
+    
+    unless group_grants.nil? or group_grants.empty?
+       puts " -> Groups with complete access <-"
+       group_grants.sort_by{|g| [ g[:user_id].to_i, g[:name] ]}.each do |grant|
+         puts "    #{grant[:user_id]}:#{grant[:name]}"
+      end
+    end    
+    
+    unless ip_grants.nil? or ip_grants.empty?
+      puts
+      puts " -> CIDR Based Access <-"
+      ip_grants.each do |grant|
+        grant[:ip_range].sort_by { |ip| ip.split('.').map { |digit| digit.to_i } }.each do |ip_range|
+          printf("    %-20s %4s %d-%d\n", ip_range, grant[:protocol], grant[:from_port], grant[:to_port])
+        end
+      end
+    end
   end
 rescue
   puts "error #{$!} #{group}"

@@ -396,15 +396,14 @@ class EC2
         }
 
         item.elements.each('groups/item') do |group|
-          grant[:groups] ||= []
-          grant[:groups] << {
+          (grant[:groups] ||= []) << {
             :user_id => group.elements['userId'].text,
             :name => group.elements['groupName'].text
           }
         end
 
-        if item.elements['ipRanges/item']
-          grant[:ip_range] = item.elements['ipRanges/item/cidrIp'].text
+        item.elements.each('ipRanges/item') do |iprange|
+          (grant[:ip_range] ||= []) << iprange.elements['cidrIp'].text
         end
 
         grants << grant
