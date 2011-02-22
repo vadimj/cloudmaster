@@ -209,10 +209,32 @@ module AWS
     if params['Timestamp'].nil? and params['Expires'].nil?
       params['Timestamp'] = current_time.getutc.iso8601
     end
-
-    # Merge parameters provided with defaults after removing
-    # any parameters without a value.
-    built_params.merge!(params.reject {|name,value| value.nil?})
+    
+    # Merge elements provided with defaults
+    # Skip any elements without a value
+    # Add any complex elements as ElementName.ParamName
+    # Add any indexed elements as ParamName.1, ParamName.2, etc
+    # Add any regular elements as ElementName
+    params.each do |param_name,param_value|
+      if param_value.nil?
+        # skip if no value
+      elsif param_value.is_a? Hash
+        # complex element
+        param_value.each do |name,value|
+          built_params["#{param_name}.#{name}"] = value unless value.nil?
+        end
+      elsif param_value.is_a? Array
+        # indexed element
+        index_count = 1
+        param_value.each do |value|
+          built_params["#{param_name}.#{index_count}"] = value
+          index_count += 1
+        end
+      else
+        # regular element
+        built_params["#{param_name}"] = param_value
+      end
+    end
 
     # Add any indexed parameters as ParamName.1, ParamName.2, etc
     indexed_params.each do |param_name,value_array|
