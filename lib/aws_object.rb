@@ -99,7 +99,7 @@ module AwsObjectBuilder
             parser = self.class.parserize(klass) unless klass.nil?
             if fields.include? key
               # if the class is defined - construct an object from the value
-              value = self.class.constantize(klass).new(value) unless klass.nil?
+              value = self.class.constantize(parser).new(value) unless parser.nil?
               instance_variable_set("@#{key}", value) unless value.nil?
             elsif multi_fields.include? key
               if value.is_a? Array
