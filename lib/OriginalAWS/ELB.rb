@@ -8,6 +8,8 @@ class ElbObject < AwsObject
 end
 
 class AppCookieStickinessPolicyParser < ElbObject
+  @xml_member_element = '//Policies/AppCookieStickinessPolicies/member'
+  
   include AwsObjectBuilder
   @create_operation = 'CreateAppCookieStickinessPolicy'
   
@@ -113,6 +115,8 @@ class InstanceStateParser < ElbObject
 end
 
 class LBCookieStickinessPolicyParser < ElbObject
+  @xml_member_element = '//LBCookieStickinessPolicies/member'
+
   include AwsObjectBuilder
   @create_operation = 'CreateLBCookieStickinessPolicy'
   
@@ -156,7 +160,7 @@ class LoadBalancerParser < ElbObject
   multi_field :instances, :elb_instance
   multi_field :listener_descriptions, :listener_description
   field :load_balancer_name
-  multi_field :policies, :elb_policy
+  field :policies, :elb_policy
 end
 
 class ElbPolicyParser < ElbObject
@@ -196,6 +200,18 @@ class SSLCertificate < ElbObject
   field :load_balancer_name
   field :load_balancer_port
   field :s_s_l_certificate_id
+end
+
+class CreateAppCookieStickinessPolicyResultParser < ElbObject
+  @xml_member_element = '//CreateAppCookieStickinessPolicyResult'
+  
+  include AwsObjectBuilder
+end
+
+class CreateLBCookieStickinessPolicyResultParser <ElbObject
+  @xml_member_element = '//CreateLBCookieStickinessPolicyResult'
+  
+  include AwsObjectBuilder
 end
 
 class ELB

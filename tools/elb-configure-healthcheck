@@ -1,0 +1,118 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+usage = <<"eos"
+SYNOPSIS
+elb-configure-healthcheck
+    LoadBalancerName  --healthy-threshold  value  --interval  value
+    --target  value  --timeout  value  --unhealthy-threshold  value
+eos
+
+help = <<"eos"
+
+DESCRIPTION
+        Configure the parameters for checking the health of instances registered
+    with a LoadBalancer. When the instance fails to respond within timeout
+    seconds to unhealthy-threshold number of consecutive healthcheck requests,
+    the instance will be marked as OutOfService. Likewise, when an instance
+    responds within the specified timeout to healthy-threshold number of
+    consecutive healthcheck requests, it is marked as InService. target
+    specifies the protocol and port, and in the case of HTTP.
+
+ARGUMENTS
+    LoadBalancerName
+        Name of the LoadBalancer. You can also set this value using "--lb".
+        Required.
+
+    --healthy-threshold VALUE
+        Number of consecutive successful healthchecks that will mark an instance as InService.
+        Required.
+
+    --interval VALUE
+        Healthcheck interval in seconds.
+        Required.
+
+    -t, --target VALUE
+        Target for healthcheck. <protocol>:<port> or <protocol>:<port>/<path>.
+        Required.
+
+    --timeout VALUE
+        Healthcheck timeout in seconds.
+        Required.
+
+    --unhealthy-threshold VALUE
+        Number of consecutive failed healthchecks that will mark an instance as OutOfService.
+        Required.
+eos
+
+if ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV[0] == '-?'
+  puts usage
+  puts help
+  exit 0
+end
+
+if ARGV.size < 11
+  puts usage
+  puts 'For more information and a full list of options, run "elb-configure-healthcheck --help"'
+  exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+options = {}
+lc_options = {}
+unless ARGV[0] =~ Regexp.new('^-')
+  options[:load_balancer_name] = ARGV.shift
+end
+
+while ARGV.size > 0
+  if ARGV[0] == '--lb'
+    unless options[:load_balancer_name].nil?
+      puts "LoadBalancerName is already defined"
+      puts usage
+      exit 1
+    end
+    ARGV.shift
+    options[:load_balancer_name] = ARGV.shift
+  end
+  if ARGV[0] == '--healthy-threshold'
+    ARGV.shift
+    lc_options[:healthy_threshold] = ARGV.shift
+  end
+  if ARGV[0] == '--interval'
+    ARGV.shift
+    lc_options[:interval] = ARGV.shift
+  end
+  if ARGV[0] == '--target' || ARGV[0] == '-t'
+    ARGV.shift
+    lc_options[:target] = ARGV.shift
+  end
+  if ARGV[0] == '--timeout'
+    ARGV.shift
+    lc_options[:timeout] = ARGV.shift
+  end
+  if ARGV[0] == '--unhealthy-threshold'
+    ARGV.shift
+    lc_options[:unhealthy_threshold] = ARGV.shift
+  end
+end
+options[:health_check] = lc_options
+
+config = BasicConfiguration.new
+elb = AwsContext.instance.elb(*config.keys)
+  
+begin
+  result = elb.create_health_check(options)
+  hc = result.health_check
+  puts "health_check target:#{hc.target} interval:#{hc.interval} timeout:#{hc.timeout} unhealthy:#{hc.unhealthy_threshold} healthy:#{hc.healthy_threshold}" unless hc.nil?
+rescue
+  puts "error: #{$!}"
+  exit 1
+end
+
+exit 0

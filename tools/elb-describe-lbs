@@ -6,15 +6,15 @@ require 'aws_context'
 require 'pp'
 
 if ARGV[0] == '-?' || ARGV[0] == '--help' || ARGV[0] == '-h'
-    usage = 'usage: elb-describe-lbs [LoadBalancerName [LoadBalancerName...]] [--long]'
-    about = 'Describe the properties of LoadBalancers.'
-    puts usage
-    puts about
-    exit 1
+  usage = 'usage: elb-describe-lbs [LoadBalancerName [LoadBalancerName...]] [--long]'
+  about = 'Describe the properties of LoadBalancers.'
+  puts usage
+  puts about
+  exit 1
 end
 
 Signal.trap("INT") do
-    exit 2
+  exit 2
 end
 
 long = false
@@ -22,12 +22,12 @@ filters = []
 options = {}
 
 while ARGV.size > 0
-    if ARGV[0] == '--long'
-        ARGV.shift
-		long = true
-    else
-	    filters = ARGV.collect{ |v| Regexp.new(ARGV.shift) }
-    end
+  if ARGV[0] == '--long'
+    ARGV.shift
+    long = true
+  else
+    filters = ARGV.collect{ |v| Regexp.new(ARGV.shift) }
+  end
 end
 
 filters << Regexp.new('.*') if filters.empty?
@@ -35,20 +35,38 @@ filters << Regexp.new('.*') if filters.empty?
 config = BasicConfiguration.new
 elb = AwsContext.instance.elb(*config.keys)
 begin
-    balancers = elb.describe_load_balancers(options)
-    balancers.each do |balancer|
-        unless filters.detect{ |f| balancer.load_balancer_name =~ f or balancer.d_n_s_name =~ f}.nil?
-            puts "#{balancer.load_balancer_name} #{balancer.d_n_s_name}"
-            puts "    zones #{balancer.availability_zones.join(',')}"
-            balancer.listeners.each do |l|
-                puts "    listener #{l.load_balancer_port} #{l.instance_port} #{l.protocol}"
-            end
-            puts "    instances #{balancer.instances.collect{|i| i.instance_id}.join(',')}" unless balancer.instances.nil?
-        end
+  balancers = elb.describe_load_balancers(options)
+  balancers.each do |balancer|
+    unless filters.detect{ |f| balancer.load_balancer_name =~ f or balancer.d_n_s_name =~ f}.nil?
+      puts "#{balancer.load_balancer_name} #{balancer.d_n_s_name}"
+      puts "  zones #{balancer.availability_zones.join(',')}"
+      balancer.listener_descriptions.each do |ld|
+	l = ld.listener
+	puts "  listener #{l.load_balancer_port}->#{l.protocol}:#{l.instance_port} #{l.s_s_l_certificate_id}"
+        puts "  policies #{ld.policy_names.join(',')}" unless ld.policy_names.nil?
+      end
+      hc = balancer.health_check
+      puts "  health_check target:#{hc.target} interval:#{hc.interval} timeout:#{hc.timeout} unhealthy:#{hc.unhealthy_threshold} healthy:#{hc.healthy_threshold}" unless hc.nil?
+      #pp balancer
+      ps = balancer.policies
+      unless ps.nil?
+        unless ps.app_cookie_stickiness_policies.nil?
+	  ps.app_cookie_stickiness_policies.each do |acp|
+	    puts "  app_cookie_policy #{acp.policy_name} cookie:#{acp.cookie_name}"
+	  end
+	end
+        unless ps.l_b_cookie_stickiness_policies.nil?
+	  ps.l_b_cookie_stickiness_policies.each do |lcp|
+	    puts "  lb_cookie_policy #{lcp.policy_name} expiration:#{lcp.cookie_expiration_period}"
+	  end
+	end
+      end
+      puts "  instances #{balancer.instances.collect{|i| i.instance_id}.join(',')}" unless balancer.instances.nil?
     end
+  end
 rescue
-    puts "error: #{$!}"
-    exit 1
+  puts "error: #{$!}"
+  exit 1
 end
 
 exit 0
