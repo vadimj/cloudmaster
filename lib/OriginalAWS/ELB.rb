@@ -139,11 +139,12 @@ end
 class ListenerParser < ElbObject
   include AwsObjectBuilder
   @create_operation = 'CreateLoadBalancerListeners'
-  @delete_operation = 'DeleteLoadBalancerListener'
+  @delete_operation = 'DeleteLoadBalancerListeners'
   
   field :listener, :listener_description
   multi_field :listeners, :listener_description
   multi_field :policy_names
+  multi_field :load_balancer_ports
   
   field :load_balancer_name
 end
@@ -219,6 +220,12 @@ end
 
 class CreateListenerResultParser < ElbObject
   @xml_member_element = '//CreateListenerResult'
+  
+  include AwsObjectBuilder
+end
+
+class DeleteListenerResultParser < ElbObject
+  @xml_member_element = '//DeleteListenerResult'
   
   include AwsObjectBuilder
 end

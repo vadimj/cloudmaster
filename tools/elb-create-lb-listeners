@@ -34,7 +34,7 @@ if ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV[0] == '-?'
   exit 0
 end
 
-if ARGV.size < 5
+if ARGV.size < 3
   puts usage
   puts 'For more information and a full list of options, run "elb-create-lb-listeners --help"'
   exit 1
