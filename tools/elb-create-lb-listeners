@@ -1,0 +1,101 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+usage = <<"eos"
+SYNOPSIS
+    elb-create-lb-listeners
+      LoadBalancerName --listener "protocol=value,lb-port=value,instance-port=value,[cert-id=value]"
+      [ --listener "protocol=value,lb-port=value,instance-port=value,[cert-id=value]" ...]
+eos
+
+help = <<"eos"
+
+DESCRIPTION
+    Create a new LoadBalancer listener
+
+ARGUMENTS
+    LoadBalancerName
+      Name of the LoadBalancer. You can also set this value using "--lb".
+      Required.
+
+    -l, --listener "protocol=value,lb-port=value,instance-port=value,[cert-id=value]" [ --listener "protocol=value,lb-port=value,instance-port=value,[cert-id=value]" ...] 
+      Port and protocol configuration for the LoadBalancer. For Windows, each
+      listener must be surrounded in quotes. For protocol types "SSL" and
+      "HTTPS", you must specify the SSL Certificate Id with "cert-id".
+      Required.
+eos
+
+if ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV[0] == '-?'
+  puts usage
+  puts help
+  exit 0
+end
+
+if ARGV.size < 5
+  puts usage
+  puts 'For more information and a full list of options, run "elb-create-lb-listeners --help"'
+  exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+options = {}
+unless ARGV[0] =~ Regexp.new('^-')
+  options[:load_balancer_name] = ARGV.shift
+end
+
+listeners = []
+while ARGV.size > 0
+  if ARGV[0] == '--lb'
+    unless options[:load_balancer_name].nil?
+      puts "LoadBalancerName is already defined"
+      puts usage
+      exit 1
+    end
+    ARGV.shift
+    options[:load_balancer_name] = ARGV.shift
+  end
+  if ARGV[0] == '--listener' || ARGV[0] == '-l'
+    ARGV.shift
+    l = ARGV.shift
+    listener = {}
+    # protocol=value,lb-port=value,instance-port=value,[cert-id=value]
+    # LoadBalancerPort, InstancePort, Protocol, and SSLCertificateId
+    params = l.split(',')
+    params.each do |param|
+      p = param.split('=')
+      if p[0] == 'protocol'
+        listener[:protocol] = p[1]
+      end
+      if p[0] == 'lb-port'
+        listener[:load_balancer_port] = p[1]
+      end
+      if p[0] == 'instance-port'
+        listener[:instance_port] = p[1]
+      end
+      if p[0] == 'cert-id'
+        listener[:s_s_l_certificate_id] = p[1]
+      end
+    end
+    listeners << listener
+  end
+end
+options[:listeners] = listeners
+
+config = BasicConfiguration.new
+elb = AwsContext.instance.elb(*config.keys)
+  
+begin
+  result = elb.create_listener(options)
+  puts "listeners created"
+rescue
+  puts "error: #{$!}"
+  exit 1
+end
+
+exit 0
