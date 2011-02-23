@@ -68,7 +68,7 @@ while ARGV.size > 0
   end
   if ARGV[0] == '--expiration-period' || ARGV[0] == '-e'
     ARGV.shift
-    options[:expiration_period] = ARGV.shift
+    options[:cookie_expiration_period] = ARGV.shift
   end
 end
 
