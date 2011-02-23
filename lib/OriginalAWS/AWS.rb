@@ -213,7 +213,8 @@ module AWS
     # Merge elements provided with defaults
     # Skip any elements without a value
     # Add any complex elements as ElementName.ParamName
-    # Add any indexed elements as ParamName.1, ParamName.2, etc
+    # Add any indexed elements as ElementName.1, ElementName.2, etc
+    # Add any complex indexed elements as ElementName.1.ParamName1, ElementName.1.ParamName2, ElementName.2.ParamName1, etc
     # Add any regular elements as ElementName
     params.each do |param_name,param_value|
       if param_value.nil?
@@ -227,7 +228,13 @@ module AWS
         # indexed element
         index_count = 1
         param_value.each do |value|
-          built_params["#{param_name}.#{index_count}"] = value
+          if value.is_a? Hash
+            value.each do |n,v|
+              built_params["#{param_name}.#{index_count}.#{n}"] = v unless v.nil?
+            end  
+          else
+            built_params["#{param_name}.#{index_count}"] = value
+          end
           index_count += 1
         end
       else
