@@ -126,23 +126,26 @@ class LBCookieStickinessPolicyParser < ElbObject
   field :load_balancer_name
 end
 
-class ListenerParser < ElbObject
+class ListenerDescriptionParser < ElbObject
   include AwsObjectBuilder
-  @create_operation = 'CreateLoadBalancerListener'
-  @delete_operation = 'DeleteLoadBalancerListener'
-  
+  @xml_member_element = '//ListenerDescriptions/member'
+
   field :instance_port
   field :load_balancer_port
   field :protocol
   field :s_s_l_certificate_id
 end
 
-class ListenerDescriptionParser < ElbObject
+class ListenerParser < ElbObject
   include AwsObjectBuilder
-  @xml_member_element = '//ListenerDescriptions/member'
-
-  field :listener, :listener
+  @create_operation = 'CreateLoadBalancerListeners'
+  @delete_operation = 'DeleteLoadBalancerListener'
+  
+  field :listener, :listener_description
+  multi_field :listeners, :listener_description
   multi_field :policy_names
+  
+  field :load_balancer_name
 end
 
 # LoadBalancerDescription
@@ -158,7 +161,7 @@ class LoadBalancerParser < ElbObject
   field :d_n_s_name
   field :health_check, :health_check_description
   multi_field :instances, :elb_instance
-  multi_field :listener_descriptions, :listener_description
+  multi_field :listener_descriptions, :listener
   field :load_balancer_name
   field :policies, :elb_policy
 end
@@ -208,8 +211,14 @@ class CreateAppCookieStickinessPolicyResultParser < ElbObject
   include AwsObjectBuilder
 end
 
-class CreateLBCookieStickinessPolicyResultParser <ElbObject
+class CreateLBCookieStickinessPolicyResultParser < ElbObject
   @xml_member_element = '//CreateLBCookieStickinessPolicyResult'
+  
+  include AwsObjectBuilder
+end
+
+class CreateListenerResultParser < ElbObject
+  @xml_member_element = '//CreateListenerResult'
   
   include AwsObjectBuilder
 end
