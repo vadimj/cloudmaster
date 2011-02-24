@@ -232,6 +232,12 @@ class DeleteListenerResultParser < ElbObject
   include AwsObjectBuilder
 end
 
+class DeleteElbPolicyResultParser < ElbObject
+  @xml_member_element = '//DeleteElbPolicyResult'
+  
+  include AwsObjectBuilder
+end
+
 class ELB
   include AwsApiActions
   
