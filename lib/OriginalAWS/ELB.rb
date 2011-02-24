@@ -178,6 +178,8 @@ class ElbPolicyParser < ElbObject
   field :load_balancer_port
   field :s_s_l_certificate_id
   field :policy_name
+  
+  multi_field :policy_names
 end
 
 # RegisterInstancesWithLoadBalancerResultParser
