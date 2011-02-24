@@ -91,6 +91,14 @@ class HealthCheckParser < ElbObject
   field :health_check, :health_check_description
 end
 
+class ElbInstanceDescriptionParser < ElbObject
+  @xml_member_element = '//Instances/member'
+
+  include AwsObjectBuilder
+  
+  field :instance_id
+end
+
 class ElbInstanceParser < ElbObject
   include AwsObjectBuilder
   @create_operation = 'RegisterInstancesWithLoadBalancer'
@@ -98,7 +106,8 @@ class ElbInstanceParser < ElbObject
   
   field :load_balancer_name
   field :instance_id
-  multi_field :instances
+  
+  multi_field :instances, :elb_instance_description
 end
 
 class InstanceStateParser < ElbObject
@@ -165,6 +174,8 @@ class LoadBalancerParser < ElbObject
   multi_field :listener_descriptions, :listener
   field :load_balancer_name
   field :policies, :elb_policy
+  
+  multi_field :listeners, :listener_description
 end
 
 class ElbPolicyParser < ElbObject
@@ -238,6 +249,13 @@ class DeleteElbPolicyResultParser < ElbObject
   include AwsObjectBuilder
 end
 
+class CreateElbInstanceResultParser < ElbObject
+  @xml_member_element = '//RegisterInstancesWithLoadBalancerResult'
+  
+  include AwsObjectBuilder
+  multi_field :instances, :elb_instance_description
+end
+
 class ELB
   include AwsApiActions
   
@@ -247,7 +265,7 @@ class ELB
   aws_object :load_balancer
   aws_object :listener
   aws_object :elb_policy
-  aws_object :instance
+  aws_object :elb_instance
   aws_object :instance_state
   aws_object :availability_zone
   aws_object :s_s_l_certificate
