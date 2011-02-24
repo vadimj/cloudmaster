@@ -7,24 +7,22 @@ require 'pp'
 
 usage = <<"eos"
 SYNOPSIS
-    elb-register-instances-with-lb
+    elb-deregister-instances-from-lb
       LoadBalancerName --instances value[,value...]
 eos
 
 help = <<"eos"
 
 DESCRIPTION
-      Registers instances to a LoadBalancer. Returns all instances registered to
-    the LoadBalancer
+      Deregisters instances from a LoadBalancer. Returns all instances registered
+    to the LoadBalancer
 
-ARGUMENTS
     LoadBalancerName
       Name of the LoadBalancer. You can also set this value using "--lb".
       Required.
 
-SPECIFIC OPTIONS
     --instances VALUE1,VALUE2,VALUE3...
-      List of instances to register with the LoadBalancer.
+      List of instances to deregister from the LoadBalancer.
       Required.
 eos
 
@@ -36,7 +34,7 @@ end
 
 if ARGV.size < 3
   puts usage
-  puts 'For more information and a full list of options, run "elb-register-instances-with-lb --help"'
+  puts 'For more information and a full list of options, run "elb-deregister-instances-from-lb --help"'
   exit 1
 end
 
@@ -69,7 +67,7 @@ config = BasicConfiguration.new
 elb = AwsContext.instance.elb(*config.keys)
 
 begin
-  result = elb.create_elb_instance(options)
+  result = elb.delete_elb_instance(options)
   if result.instances.nil?
     puts "no instances"
   else

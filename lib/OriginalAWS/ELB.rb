@@ -256,6 +256,13 @@ class CreateElbInstanceResultParser < ElbObject
   multi_field :instances, :elb_instance_description
 end
 
+class DeleteElbInstanceResultParser < ElbObject
+  @xml_member_element = '//DeregisterInstancesFromLoadBalancerResult'
+  
+  include AwsObjectBuilder
+  multi_field :instances, :elb_instance_description
+end
+
 class ELB
   include AwsApiActions
   
