@@ -5,14 +5,6 @@ require 'basic_configuration'
 require 'aws_context'
 require 'pp'
 
-if ARGV[0] == '-?' || ARGV[0] == '--help' || ARGV[0] == '-h'
-  usage = 'usage: elb-describe-lbs [LoadBalancerName [LoadBalancerName...]] [--long]'
-  about = 'Describe the properties of LoadBalancers.'
-  puts usage
-  puts about
-  exit 1
-end
-
 usage = <<"eos"
 SYNOPSIS
     elb-describe-lbs

@@ -1,0 +1,82 @@
+#!/usr/bin/ruby
+$:.unshift File.join(File.dirname(__FILE__))
+require 'AWS/ELB'
+require 'basic_configuration'
+require 'aws_context'
+require 'pp'
+
+usage = <<"eos"
+SYNOPSIS
+    elb-describe-instance-health
+      LoadBalancerName [--instances value[,value...]]
+eos
+
+help = <<"eos"
+
+DESCRIPTION
+    Describes the state of instances
+
+ARGUMENTS
+    LoadBalancerName
+      Name of the LoadBalancer. You can also set this value using "--lb".
+      Required.
+
+    --instances VALUE1,VALUE2,VALUE3...
+      List of instances to describe the state of.
+      Not specifying describes all instances for the LoadBalancer.
+eos
+
+if ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV[0] == '-?'
+  puts usage
+  puts help
+  exit 0
+end
+
+if ARGV.size < 1
+  puts usage
+  puts 'For more information and a full list of options, run "elb-describe-instance-health --help"'
+  exit 1
+end
+
+Signal.trap("INT") do
+  exit 2
+end
+
+options = {}
+unless ARGV[0] =~ Regexp.new('^-')
+  options[:load_balancer_name] = ARGV.shift
+end
+
+while ARGV.size > 0
+  if ARGV[0] == '--lb'
+    unless options[:load_balancer_name].nil?
+      puts "LoadBalancerName is already defined"
+      puts usage
+      exit 1
+    end
+    ARGV.shift
+    options[:load_balancer_name] = ARGV.shift
+  end
+  if ARGV[0] == '--instances'
+    options[:instances] = ARGV.shift.split(',')
+  end
+end
+
+config = BasicConfiguration.new
+elb = AwsContext.instance.elb(*config.keys)
+
+begin
+  instance_states = elb.describe_instance_states(options)
+  if instance_states.empty?
+    puts "no instances"
+  else
+    instance_states.each do |is|
+      puts "#{is.instance_id} #{is.state} #{is.reason_code} #{is.description}"
+    end
+  end
+rescue
+  puts "error: #{$!}"
+  exit 1
+end
+
+exit 0
