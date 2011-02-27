@@ -5,12 +5,37 @@ require 'basic_configuration'
 require 'aws_context'
 require 'pp'
 
-if ARGV[0] == '-?' || ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV.size < 3
-    usage = 'usage: elb-enable-zones-for-lb LoadBalancerName --availability-zones value[,value...]'
-    about = 'Add Availability Zones to an existing LoadBalancer.'
-    puts usage
-    puts about
-    exit 1
+usage = <<"eos"
+SYNOPSIS
+    elb-enable-zones-for-lb
+      LoadBalancerName --availability-zones value[,value...]
+eos
+
+help = <<"eos"
+
+DESCRIPTION
+      Add availability zones to existing LoadBalancer
+
+ARGUMENTS
+    LoadBalancerName
+      Name of the LoadBalancer. You can also set this value using "--lb".
+      Required.
+
+    -z, --availability-zones VALUE1,VALUE2,VALUE3...
+      List of availability zones to add to the LoadBalancer.
+      Required.
+eos
+
+if ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV[0] == '-?'
+  puts usage
+  puts help
+  exit 0
+end
+
+if ARGV.size < 3
+  puts usage
+  puts 'For more information and a full list of options, run "elb-enable-zones-for-lb --help"'
+  exit 1
 end
 
 Signal.trap("INT") do
@@ -18,33 +43,35 @@ Signal.trap("INT") do
 end
 
 options = {}
-options[:load_balancer_name] = ARGV.shift
+unless ARGV[0] =~ Regexp.new('^-')
+  options[:load_balancer_name] = ARGV.shift
+end
 
 while ARGV.size > 0
-    if ARGV[0] == '--availability-zones'
-        ARGV.shift
-        options[:availability_zones] = ARGV.shift.split(',')
+  if ARGV[0] == '--lb'
+    unless options[:load_balancer_name].nil?
+      puts "LoadBalancerName is already defined"
+      puts usage
+      exit 1
     end
+    ARGV.shift
+    options[:load_balancer_name] = ARGV.shift
+  end
+  if ARGV[0] == '--availability-zones' || ARGV[0] == '-z'
+    ARGV.shift
+    options[:availability_zones] = ARGV.shift.split(',')
+  end
 end
 
 config = BasicConfiguration.new
 elb = AwsContext.instance.elb(*config.keys)
+
 begin
-    result = elb.create_availability_zone(options)
-    balancers = elb.describe_load_balancers(options)
-    balancers.each do |balancer|
-        if balancer.load_balancer_name == options[:load_balancer_name]
-            puts "#{balancer.load_balancer_name} #{balancer.d_n_s_name}"
-            puts "    zones #{balancer.availability_zones.join(',')}"
-            balancer.listeners.each do |l|
-                puts "    listener #{l.load_balancer_port} #{l.instance_port} #{l.protocol}"
-            end
-            puts "    instances #{balancer.instances.join(',')}" unless balancer.instances.nil?
-        end
-    end
+  result = elb.create_availability_zone(options)
+  puts "zones #{result.availability_zones.join(',')}"
 rescue
-    puts "error: #{$!}"
-    exit 1
+  puts "error: #{$!}"
+  exit 1
 end
 
 exit 0

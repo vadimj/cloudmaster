@@ -8,13 +8,13 @@ usage = <<"eos"
 SYNOPSIS
 elb-configure-healthcheck
     LoadBalancerName  --healthy-threshold  value  --interval  value
-    --target  value  --timeout  value  --unhealthy-threshold  value
+      --target  value  --timeout  value  --unhealthy-threshold  value
 eos
 
 help = <<"eos"
 
 DESCRIPTION
-        Configure the parameters for checking the health of instances registered
+      Configure the parameters for checking the health of instances registered
     with a LoadBalancer. When the instance fails to respond within timeout
     seconds to unhealthy-threshold number of consecutive healthcheck requests,
     the instance will be marked as OutOfService. Likewise, when an instance
@@ -24,28 +24,28 @@ DESCRIPTION
 
 ARGUMENTS
     LoadBalancerName
-        Name of the LoadBalancer. You can also set this value using "--lb".
-        Required.
+      Name of the LoadBalancer. You can also set this value using "--lb".
+      Required.
 
     --healthy-threshold VALUE
-        Number of consecutive successful healthchecks that will mark an instance as InService.
-        Required.
+      Number of consecutive successful healthchecks that will mark an instance as InService.
+      Required.
 
     --interval VALUE
-        Healthcheck interval in seconds.
-        Required.
+      Healthcheck interval in seconds.
+      Required.
 
     -t, --target VALUE
-        Target for healthcheck. <protocol>:<port> or <protocol>:<port>/<path>.
-        Required.
+      Target for healthcheck. <protocol>:<port> or <protocol>:<port>/<path>.
+      Required.
 
     --timeout VALUE
-        Healthcheck timeout in seconds.
-        Required.
+      Healthcheck timeout in seconds.
+      Required.
 
     --unhealthy-threshold VALUE
-        Number of consecutive failed healthchecks that will mark an instance as OutOfService.
-        Required.
+      Number of consecutive failed healthchecks that will mark an instance as OutOfService.
+      Required.
 eos
 
 if ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV[0] == '-?'

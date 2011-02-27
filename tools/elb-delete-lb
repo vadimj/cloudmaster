@@ -5,29 +5,93 @@ require 'basic_configuration'
 require 'aws_context'
 require 'pp'
 
-if ARGV[0] == '-?' || ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV.size < 1
-    usage = "usage: elb-delete-lb LoadBalancerName"
-    about = "Delete an existing LoadBalancer."
-    puts usage
-    puts about
-    exit 1
+def ask message
+  puts message
+  STDIN.gets.chomp
+end
+
+warning = <<"eos"
+
+    Warning: Deleting a LoadBalancer can lead to service disruption to any
+    customers connected to the LoadBalancer. Are you sure you want to delete
+    this LoadBalancer? [Ny]
+eos
+
+usage = <<"eos"
+SYNOPSIS
+    elb-delete-lb
+      LoadBalancerName
+eos
+
+help = <<"eos"
+
+DESCRIPTION
+      Deletes an existing LoadBalancer
+
+ARGUMENTS
+    LoadBalancerName
+      Name of the existing LoadBalancer to delete.
+      You can also set this value using "--lb".
+      Required.
+
+    --force
+      Suppress confirmation before enacting the operation.
+      The default value is 'false'.
+eos
+
+if ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV[0] == '-?'
+  puts usage
+  puts help
+  exit 0
+end
+
+if ARGV.size < 1
+  puts usage
+  puts 'For more information and a full list of options, run "elb-delete-lb --help"'
+  exit 1
 end
 
 Signal.trap("INT") do
-    exit 2
+  exit 2
 end
 
+force = false
 options = {}
-options[:load_balancer_name] = ARGV.shift
+unless ARGV[0] =~ Regexp.new('^-')
+  options[:load_balancer_name] = ARGV.shift
+end
+
+while ARGV.size > 0
+  if ARGV[0] == '--lb'
+    unless options[:load_balancer_name].nil?
+      puts "LoadBalancerName is already defined"
+      puts usage
+      exit 1
+    end
+    ARGV.shift
+    options[:load_balancer_name] = ARGV.shift
+  end
+  if ARGV[0] == '--force'
+    force = true
+    ARGV.shift
+  end
+end
 
 config = BasicConfiguration.new
 elb = AwsContext.instance.elb(*config.keys)
+
 begin
-    elb.delete_load_balancer(options)
-    puts "deleted #{options[:load_balancer_name]}"
+  confirm = ask(warning) unless force
+  if force or confirm =~ Regexp.new(/^y/i)
+    result = elb.delete_load_balancer(options)
+  else
+    puts "elb-delete-lb: User stopped the execution of elb-delete-lb."
+    exit 2
+  end
+  puts "deleted #{options[:load_balancer_name]}"
 rescue
-    puts "error: #{$!}"
-    exit 1
+  puts "error: #{$!}"
+  exit 1
 end
 
 exit 0

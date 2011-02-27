@@ -17,6 +17,7 @@ DESCRIPTION
       Deregisters instances from a LoadBalancer. Returns all instances registered
     to the LoadBalancer
 
+ARGUMENTS
     LoadBalancerName
       Name of the LoadBalancer. You can also set this value using "--lb".
       Required.

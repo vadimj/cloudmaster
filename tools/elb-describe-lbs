@@ -13,6 +13,28 @@ if ARGV[0] == '-?' || ARGV[0] == '--help' || ARGV[0] == '-h'
   exit 1
 end
 
+usage = <<"eos"
+SYNOPSIS
+    elb-describe-lbs
+      [LoadBalancerName [LoadBalancerName ...]]
+eos
+
+help = <<"eos"
+
+DESCRIPTION
+      Describes the state and properties of LoadBalancers
+
+ARGUMENTS
+    LoadBalancerNames
+      List of LoadBalancers to describe. Not specifying describes all LoadBalancers owned by the AWS Account.
+eos
+
+if ARGV[0] == '--help' || ARGV[0] == '-h' || ARGV[0] == '-?'
+  puts usage
+  puts help
+  exit 0
+end
+
 Signal.trap("INT") do
   exit 2
 end
@@ -26,7 +48,7 @@ while ARGV.size > 0
     ARGV.shift
     long = true
   else
-    filters = ARGV.collect{ |v| Regexp.new(ARGV.shift) }
+    filters << Regexp.new(ARGV.shift)
   end
 end
 
@@ -34,11 +56,13 @@ filters << Regexp.new('.*') if filters.empty?
 
 config = BasicConfiguration.new
 elb = AwsContext.instance.elb(*config.keys)
+
 begin
   balancers = elb.describe_load_balancers(options)
   balancers.each do |balancer|
     unless filters.detect{ |f| balancer.load_balancer_name =~ f or balancer.d_n_s_name =~ f}.nil?
-      puts "#{balancer.load_balancer_name} #{balancer.d_n_s_name}"
+      puts "#{balancer.load_balancer_name} #{balancer.d_n_s_name} #{balancer.created_time}"
+      next unless long;
       puts "  zones #{balancer.availability_zones.join(',')}"
       balancer.listener_descriptions.each do |ld|
 	l = ld.listener
