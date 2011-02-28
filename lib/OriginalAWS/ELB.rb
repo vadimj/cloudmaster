@@ -210,7 +210,7 @@ class AvailabilityZoneParser < ElbObject
   multi_field :availability_zones
 end
 
-class SSLCertificate < ElbObject
+class SSLCertificateParser < ElbObject
   include AwsObjectBuilder
   @create_operation = 'SetLoadBalancerListenerSSLCertificate'
 
