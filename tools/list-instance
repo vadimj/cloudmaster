@@ -30,7 +30,8 @@ begin
       puts "#{o[:image_id]}"
       puts "#{o[:launch_time]}"
       puts "#{i[:groups].join(' ')}"
-	  puts "#{o[:zone]}"
+      puts "#{o[:zone]}"
+      puts "#{o[:key_name]}"
     end
   end
 rescue
